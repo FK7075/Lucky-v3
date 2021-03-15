@@ -58,9 +58,32 @@ public interface BeanDefinition {
     String getInitMethodName();
 
     /**
+     * 获取构造器所需要的值
+     */
+    List<?> getConstructorArgumentValues();
+
+    /**
+     * 获取属性依赖所需要的值
+     */
+    List<PropertyValue> getPropertyValues();
+
+    /**
      * 销毁方法
      */
     String getDestroyMethodName();
+
+    /* 下面的四个方法是供beanFactory中使用的 */
+    //获取构造方法
+    Constructor<?> getConstructor();
+
+    //缓存构造方法
+    void setConstructor(Constructor<?> constructor);
+
+    //获取工厂方法
+    Method getFactoryMethod();
+
+    //缓存工厂方法
+    void setFactoryMethod(Method factoryMethod);
 
     /**
      * 检验bean定义的合法性

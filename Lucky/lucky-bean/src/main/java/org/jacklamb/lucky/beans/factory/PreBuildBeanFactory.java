@@ -1,5 +1,6 @@
-package org.jacklamb.lucky.beans;
+package org.jacklamb.lucky.beans.factory;
 
+import org.jacklamb.lucky.beans.BeanDefinition;
 import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,21 @@ public class PreBuildBeanFactory extends DefaultBeanFactory {
         super.registerBeanDefinition(beanName, beanDefinition);
         synchronized (beanNames){
             beanNames.add(beanName);
+        }
+    }
+
+
+    public void preInstantiateSingletons() throws Exception {
+        synchronized (beanNames){
+            for (String beanName : beanNames) {
+                BeanDefinition definition = getBeanDefinition(beanName);
+                if(definition.isSingleton()){
+                    doGetBean(beanName);
+                    if(log.isDebugEnabled()){
+                        log.debug("preInstantiate: name=`{}` {}",beanName,definition);
+                    }
+                }
+            }
         }
     }
 

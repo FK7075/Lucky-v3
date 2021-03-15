@@ -1,4 +1,4 @@
-package org.jacklamb.lucky.beans;
+package org.jacklamb.lucky.beans.factory;
 
 import org.jacklamb.lucky.exception.BeansException;
 

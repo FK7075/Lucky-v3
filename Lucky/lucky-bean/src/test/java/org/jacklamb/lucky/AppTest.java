@@ -1,4 +1,4 @@
-package org.jacklamb.lucky.beans;
+package org.jacklamb.lucky;
 
 import static org.junit.Assert.assertTrue;
 

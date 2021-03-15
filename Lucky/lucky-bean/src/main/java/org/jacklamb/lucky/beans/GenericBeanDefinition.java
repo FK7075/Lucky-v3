@@ -1,5 +1,9 @@
 package org.jacklamb.lucky.beans;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.util.List;
+
 /**
  * @author fk
  * @version 1.0
@@ -7,18 +11,36 @@ package org.jacklamb.lucky.beans;
  */
 public class GenericBeanDefinition implements BeanDefinition {
 
-    //bean的名称
+    // bean的名称
     private Class<?> beanClass;
-    //scope 默认单例
+    // scope 默认单例
     private Scope scope = Scope.SINGLETON;
-    //工厂bean名
+    // 工厂bean名
     private String factoryBeanName;
-    //工厂方法名
+    // 工厂方法名
     private String factoryMethodName;
-    //初始化方法
+    // 初始化方法
     private String initMethodName;
-    //销毁方法
+    // 销毁方法
     private String destroyMethodName;
+    // 构造器的参数值
+    private List<?> constructorArgumentValues;
+    // 属性依赖的值
+    private List<PropertyValue> propertyValues;
+    // 构造器缓存(实例为·原型·类型时可以直接获取)
+    private Constructor<?> constructor;
+    // 工厂方法缓存(实例为·原型·类型时可以直接获取)
+    private Method factoryMethod;
+
+    //设置属性依赖的值
+    public void setPropertyValues(List<PropertyValue> propertyValues) {
+        this.propertyValues = propertyValues;
+    }
+
+    // 为构造器设置参数值
+    public void setConstructorArgumentValues(List<?> constructorArgumentValues) {
+        this.constructorArgumentValues = constructorArgumentValues;
+    }
 
     //设置工厂bean名
     public void setBeanClass(Class<?> beanClass) {
@@ -86,8 +108,38 @@ public class GenericBeanDefinition implements BeanDefinition {
     }
 
     @Override
+    public List<?> getConstructorArgumentValues() {
+        return this.constructorArgumentValues;
+    }
+
+    @Override
+    public List<PropertyValue> getPropertyValues() {
+        return this.propertyValues;
+    }
+
+    @Override
     public String getDestroyMethodName() {
         return this.destroyMethodName;
+    }
+
+    @Override
+    public Constructor<?> getConstructor() {
+        return this.constructor;
+    }
+
+    @Override
+    public void setConstructor(Constructor<?> constructor) {
+        this.constructor=constructor;
+    }
+
+    @Override
+    public Method getFactoryMethod() {
+        return this.factoryMethod;
+    }
+
+    @Override
+    public void setFactoryMethod(Method factoryMethod) {
+        this.factoryMethod=factoryMethod;
     }
 
     @Override
@@ -155,6 +207,4 @@ public class GenericBeanDefinition implements BeanDefinition {
             return scope.equals(other.scope);
         }
     }
-
-
 }
