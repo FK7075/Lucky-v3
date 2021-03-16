@@ -36,6 +36,11 @@ public interface BeanDefinition {
     boolean isPrototype();
 
     /**
+     * 是否是懒加载的
+     */
+    boolean isLazy();
+
+    /**
      * 工厂bean名：表示该bean的实例是由工厂生产的，该方将会法返回该工厂的name
      * 校验：
      * getFactoryBeanName()不为null时，getFactoryMethodName()必然不能为null，getBeanClass()必然为null
@@ -102,5 +107,4 @@ public interface BeanDefinition {
         }
         return true;
     }
-
 }

@@ -15,6 +15,8 @@ public class GenericBeanDefinition implements BeanDefinition {
     private Class<?> beanClass;
     // scope 默认单例
     private Scope scope = Scope.SINGLETON;
+    // 是否为懒加载 默认false
+    private boolean isLazy=false;
     // 工厂bean名
     private String factoryBeanName;
     // 工厂方法名
@@ -31,6 +33,7 @@ public class GenericBeanDefinition implements BeanDefinition {
     private Constructor<?> constructor;
     // 工厂方法缓存(实例为·原型·类型时可以直接获取)
     private Method factoryMethod;
+
 
     //设置属性依赖的值
     public void setPropertyValues(List<PropertyValue> propertyValues) {
@@ -50,6 +53,11 @@ public class GenericBeanDefinition implements BeanDefinition {
     //设置scope
     public void setScope(Scope scope) {
         this.scope = scope;
+    }
+
+    //设置是否懒加载
+    public void setLazy(boolean lazy) {
+        isLazy = lazy;
     }
 
     //设置工厂bean名
@@ -90,6 +98,11 @@ public class GenericBeanDefinition implements BeanDefinition {
     @Override
     public boolean isPrototype() {
         return Scope.PROTOTYPE.equals(this.scope);
+    }
+
+    @Override
+    public boolean isLazy() {
+        return this.isLazy;
     }
 
     @Override

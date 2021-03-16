@@ -34,7 +34,7 @@ public class PreBuildBeanFactory extends DefaultBeanFactory {
         synchronized (beanNames){
             for (String beanName : beanNames) {
                 BeanDefinition definition = getBeanDefinition(beanName);
-                if(definition.isSingleton()){
+                if(definition.isSingleton() && !definition.isLazy()){
                     doGetBean(beanName);
                     if(log.isDebugEnabled()){
                         log.debug("preInstantiate: name=`{}` {}",beanName,definition);

@@ -2,21 +2,14 @@ package org.jacklamb.lucky.beans.factory;
 
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.reflect.FieldUtils;
-import org.jacklamb.lucky.beans.BeanDefinition;
-import org.jacklamb.lucky.beans.BeanDefinitionRegister;
-import org.jacklamb.lucky.beans.BeanReference;
-import org.jacklamb.lucky.beans.PropertyValue;
-import org.jacklamb.lucky.exception.BeanCurrentlyInCreationException;
-import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
+import org.jacklamb.lucky.beans.*;
+import org.jacklamb.lucky.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,108 +18,94 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0
  * @date 2021/3/12 0012 18:31
  */
-public class DefaultBeanFactory implements BeanFactory, BeanDefinitionRegister, Closeable {
+public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
 
     private final static Logger log= LoggerFactory.getLogger(DefaultBeanFactory.class);
-
-    // bean定义信息
-    private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
-    // 单例池
-    private final Map<String, Object> singletonObjects = new ConcurrentHashMap<>(256);
-    // 早期的单例对象
-    private final Map<String,Object> earlySingletonObjects = new HashMap<>();
-    // 当前正在创建的Bean
-    private final ThreadLocal<Set<String>> buildingBeans=new ThreadLocal<>();
-
-    @Override
-    public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition)
-            throws BeanDefinitionRegisterException {
-        Objects.requireNonNull(beanName, "注册bean需要给入beanName");
-        Objects.requireNonNull(beanDefinition, "注册bean需要给入beanDefinition");
-
-        if(!beanDefinition.validate()){
-            throw new BeanDefinitionRegisterException("名字为[" + beanName + "] 的bean定义不合法：" + beanDefinition);
-        }
-
-        this.beanDefinitionMap.put(beanName,beanDefinition);
-    }
-
-    @Override
-    public BeanDefinition getBeanDefinition(String beanName) {
-        return this.beanDefinitionMap.get(beanName);
-    }
-
-    @Override
-    public boolean containsBeanDefinition(String beanName) {
-        return this.beanDefinitionMap.containsKey(beanName);
-    }
 
     @Override
     public Object getBean(String name) throws Exception {
         return this.doGetBean(name);
     }
 
-    protected Object doGetBean(String name) throws Exception {
-        //判断给入的bean名字不能为空
-        Objects.requireNonNull(name, "beanName不能为空");
-
-        //从单例容器中获取实例，如果存在则直接返回此单例对象
-        Object instance = this.singletonObjects.get(name);
-        if(instance != null){
-            return instance;
+    @SuppressWarnings("unchecked")
+    protected <T> T doGetBean(String name) throws Exception {
+        Object bean;
+        Object sharedInstance = getSingleton(name,true);
+        if(sharedInstance != null){
+            bean=sharedInstance;
+        }else{
+            BeanDefinition definition = getBeanDefinition(name);
+            Assert.notNull(definition,"can not find the definition of bean '" + name + "'");
+            bean = getSingleton(name,()->doCreateBean(name,definition));
         }
-
-        //从早期对象中获取实例
-        instance = this.earlySingletonObjects.get(name);
-        BeanDefinition beanDefinition = this.getBeanDefinition(name);
-        Objects.requireNonNull(beanDefinition, "`"+name+"`的BeanDefinition为空");
-        if(instance == null ){
-
-
-            //创建实例
-            instance = doCreateInstance(name,beanDefinition);
-
-            // 设置属性依赖
-            this.setPropertyDIValues(beanDefinition,instance);
-
-            // 执行初始化方法
-            this.doInit(beanDefinition, instance);
-
-            /*
-                实例创建完毕，初始化完毕
-                1.将此对象的早期对象删除
-                2.并将此实例加入到单例对象列表中
-             */
-
-            if (beanDefinition.isSingleton()) {
-                earlySingletonObjects.remove(name);
-                singletonObjects.put(name, instance);
-            }
-            //实例初始化结束后，移除该实例的创建日志
-            buildingBeans.get().remove(name);
-        }
-        return instance;
+        return (T) bean;
+//        //判断给入的bean名字不能为空
+//        Objects.requireNonNull(name, "beanName不能为空");
+//
+//        //从单例容器中获取实例，如果存在则直接返回此单例对象
+//        Object instance = this.singletonObjects.get(name);
+//        if(instance != null){
+//            return instance;
+//        }
+//
+//        //从早期对象中获取实例
+//        instance = this.earlySingletonObjects.get(name);
+//        BeanDefinition beanDefinition = this.getBeanDefinition(name);
+//        Objects.requireNonNull(beanDefinition, "`"+name+"`的BeanDefinition为空");
+//        if(instance == null ){
+//
+//            //创建实例
+//            instance = doCreateInstance(name,beanDefinition);
+//
+//            // 设置属性依赖
+//            this.setPropertyDIValues(beanDefinition,instance);
+//
+//            // 执行初始化方法
+//            this.doInit(beanDefinition, instance);
+//
+//            /*
+//                实例创建完毕，初始化完毕
+//                1.将此对象的早期对象删除
+//                2.并将此实例加入到单例对象列表中
+//             */
+//
+//            if (beanDefinition.isSingleton()) {
+//                earlySingletonObjects.remove(name);
+//                singletonObjects.put(name, instance);
+//            }
+//            //实例初始化结束后，移除该实例的创建日志
+//            singletonsCurrentlyInCreation.remove(name);
+//        }
+//        return instance;
     }
 
-    private Object doCreateInstance(String name,BeanDefinition beanDefinition) throws Exception {
-        // 初始化创建日志
-        Set<String> ingBeans = buildingBeans.get();
-        if(ingBeans==null){
-            ingBeans =new HashSet<>();
-            buildingBeans.set(ingBeans);
+    private Object doCreateBean(String name,BeanDefinition beanDefinition) throws Exception {
+        Object bean = createBeanInstance(name, beanDefinition);
+        boolean earlySingletonExposure = isSingletonCurrentlyInCreation(name);
+        if(earlySingletonExposure){
+            addSingletonFactory(name,()->bean);
         }
-        //检查循环依赖
-        if(ingBeans.contains(name)){
-            throw new BeanCurrentlyInCreationException("`"+name + "' 循环依赖！" + ingBeans);
+        Object exposedObject = bean;
+        if (earlySingletonExposure) {
+            Object earlySingletonReference = getSingleton(name, false);
+            if (earlySingletonReference != null) {
+                exposedObject = earlySingletonReference;
+            }
         }
+        return exposedObject;
+    }
 
-        //添加当前实例的创建记录
-        ingBeans.add(name);
+    private Object createBeanInstance(String name,BeanDefinition beanDefinition)
+            throws Exception {
         Class<?> beanClass = beanDefinition.getBeanClass();
         Object instance;
         if(beanClass != null){
+            boolean isAbstract = Modifier.isAbstract(beanClass.getModifiers()) || Modifier.isInterface(beanClass.getModifiers());
             //构造器构造
             if(Assert.isBlankString(beanDefinition.getFactoryMethodName())){
+                if(isAbstract){
+                    throw new BeansException("Specified class '" + name + "' is an abstract class or interface");
+                }
                 instance = createInstanceByConstructor(beanDefinition);
             }
             //静态工厂方法构造
@@ -138,10 +117,10 @@ public class DefaultBeanFactory implements BeanFactory, BeanDefinitionRegister, 
         else{
             instance = createInstanceByFactoryBean(beanDefinition);
         }
-        //将实例化但是还未初始化的早期对象存入缓存
-        if(beanDefinition.isSingleton()){
-            earlySingletonObjects.put(name,instance);
-        }
+//        //将实例化但是还未初始化的早期对象存入缓存
+//        if(beanDefinition.isSingleton()){
+//            earlySingletonObjects.put(name,instance);
+//        }
         return instance;
     }
 
@@ -183,7 +162,7 @@ public class DefaultBeanFactory implements BeanFactory, BeanDefinitionRegister, 
     }
 
     // 设置属性依赖值
-    private void setPropertyDIValues(BeanDefinition diValues,Object instance) throws Exception {
+    private void populateBean(BeanDefinition diValues,Object instance) throws Exception {
         List<PropertyValue> propertyValues = diValues.getPropertyValues();
         // 没有属性依赖直接返回
         if(Assert.isEmptyCollection(propertyValues)){
@@ -308,71 +287,17 @@ public class DefaultBeanFactory implements BeanFactory, BeanDefinitionRegister, 
 
     }
 
-
-    //获取构造器的执行参数
-    private Object[] getConstructorArgumentValues(BeanDefinition beanDefinition) throws Exception {
-        return getRealValues(beanDefinition.getConstructorArgumentValues());
-    }
-
-    //获取构造器参数的真实值，将引用值替换为真实值
-    private Object[] getRealValues(List<?> constructorArgumentValues) throws Exception {
-        //空值
-        if(Assert.isEmptyCollection(constructorArgumentValues)){
-            return null;
-        }
-        Object[] values=new Object[constructorArgumentValues.size()];
-        int index=0;
-        for (Object ref : constructorArgumentValues) {
-            values[index++]=getRealValue(ref);
-        }
-        return values;
-    }
-
-    //将引用值转化为真实值
-    private Object getRealValue(Object ref) throws Exception {
-        if(ref==null){
-            return null;
-        }else if(ref instanceof BeanReference){
-            return doGetBean(((BeanReference)ref).getBeanName());
-        }else if (ref instanceof Object[]) {
-            Object[] refArray= (Object[]) ref;
-            Object[] targetArray=new Object[refArray.length];
-            int i=0;
-            for (Object element : refArray) {
-                targetArray[i++]=getRealValue(element);
-            }
-            return targetArray;
-
-        } else if (ref instanceof Collection) {
-            Collection<?> refCollection = (Collection<?>) ref;
-            for (Object element : refCollection) {
-                getRealValue(element);
-            }
-            return refCollection;
-        } else if (ref instanceof Properties) {
-            return ref;
-        } else if (ref instanceof Map) {
-            return ref;
-        } else {
-           return ref;
-        }
-    }
-
-
     @Override
     public void close() throws IOException {
-        for (Map.Entry<String,BeanDefinition> entry:beanDefinitionMap.entrySet()){
-            String beanName = entry.getKey();
-            BeanDefinition bd = entry.getValue();
-
+        for (String beanName : getBeanDefinitionNames()) {
+            BeanDefinition bd = getBeanDefinition(beanName);
             if(bd.isSingleton() && !Assert.isBlankString(bd.getDestroyMethodName())){
-                Object instance = this.singletonObjects.get(beanName);
                 try {
+                    Object instance = this.getSingleton(beanName,true);
                     Method destroyMethod = instance.getClass().getMethod(bd.getDestroyMethodName());
                     destroyMethod.invoke(instance);
-                } catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException
-                        | InvocationTargetException e1) {
-                    log.error("执行bean[" + beanName + "] " + bd + " 的销毁方法执行异常！", e1);
+                } catch (Exception e) {
+                    log.error("执行bean[" + beanName + "] " + bd + " 的销毁方法执行异常！", e);
                 }
             }
         }
