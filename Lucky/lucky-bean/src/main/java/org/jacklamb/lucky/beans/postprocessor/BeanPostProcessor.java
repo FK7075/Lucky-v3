@@ -8,12 +8,12 @@ package org.jacklamb.lucky.beans.postprocessor;
 public interface BeanPostProcessor {
 
     //bean初始化前增强
-    default Object postProcessBeforeInitialization(Object bean, String beanName) throws Exception {
+    default Object postProcessBeforeInitialization(Object bean, String beanName) {
         return bean;
     }
 
     //bean初始化后增强
-    default Object postProcessAfterInitialization(Object bean, String beanName) throws Exception {
+    default Object postProcessAfterInitialization(Object bean, String beanName) {
         return bean;
     }
 }

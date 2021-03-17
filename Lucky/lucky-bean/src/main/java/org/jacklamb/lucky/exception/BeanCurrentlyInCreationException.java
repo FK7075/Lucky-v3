@@ -5,7 +5,7 @@ package org.jacklamb.lucky.exception;
  * @version 1.0.0
  * @date 2021/3/14 上午1:26
  */
-public class BeanCurrentlyInCreationException extends Exception {
+public class BeanCurrentlyInCreationException extends RuntimeException {
 
     public BeanCurrentlyInCreationException(String message){
         super(message);

@@ -23,12 +23,12 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
     private final static Logger log= LoggerFactory.getLogger(DefaultBeanFactory.class);
 
     @Override
-    public Object getBean(String name) throws Exception {
+    public Object getBean(String name) throws BeansException {
         return this.doGetBean(name);
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> T doGetBean(String name) throws Exception {
+    protected <T> T doGetBean(String name) throws BeansException {
         Object bean;
         Object sharedInstance = getSingleton(name,true);
         if(sharedInstance != null){
@@ -79,9 +79,9 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
 //        return instance;
     }
 
-    private Object doCreateBean(String name,BeanDefinition beanDefinition) throws Exception {
-        Object bean = createBeanInstance(name, beanDefinition);
-        boolean earlySingletonExposure = isSingletonCurrentlyInCreation(name);
+    private Object doCreateBean(String name,BeanDefinition definition){
+        Object bean = createBeanInstance(name, definition);
+        boolean earlySingletonExposure = definition.isSingleton() && isSingletonCurrentlyInCreation(name);
         if(earlySingletonExposure){
             addSingletonFactory(name,()->bean);
         }
@@ -92,11 +92,19 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
                 exposedObject = earlySingletonReference;
             }
         }
+
+        populateBean(definition,exposedObject);
+
+        exposedObject=applyPostProcessBeforeInitialization(exposedObject,name);
+        doInit(definition,exposedObject);
+        exposedObject=applyPostProcessAfterInitialization(exposedObject,name);
+
+        singletonsCurrentlyInCreation.remove(name);
         return exposedObject;
     }
 
-    private Object createBeanInstance(String name,BeanDefinition beanDefinition)
-            throws Exception {
+    private Object createBeanInstance(String name,BeanDefinition beanDefinition){
+        singletonsCurrentlyInCreation.add(name);
         Class<?> beanClass = beanDefinition.getBeanClass();
         Object instance;
         if(beanClass != null){
@@ -106,63 +114,70 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
                 if(isAbstract){
                     throw new BeansException("Specified class '" + name + "' is an abstract class or interface");
                 }
-                instance = createInstanceByConstructor(beanDefinition);
+                instance = createInstanceByConstructor(name,beanDefinition);
             }
             //静态工厂方法构造
             else{
-                instance = createInstanceByStaticFactoryMethod(beanDefinition);
+                instance = createInstanceByStaticFactoryMethod(name,beanDefinition);
             }
         }
         //非静态工厂bean方法构造
         else{
-            instance = createInstanceByFactoryBean(beanDefinition);
+            instance = createInstanceByFactoryBean(name,beanDefinition);
         }
-//        //将实例化但是还未初始化的早期对象存入缓存
-//        if(beanDefinition.isSingleton()){
-//            earlySingletonObjects.put(name,instance);
-//        }
         return instance;
     }
 
     // 初始化
-    private void doInit(BeanDefinition beanDefinition, Object instance) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    private void doInit(BeanDefinition beanDefinition, Object instance) {
         if(!Assert.isBlankString(beanDefinition.getInitMethodName())){
-            Method initMethod = beanDefinition.getBeanClass().getMethod(beanDefinition.getInitMethodName());
-            initMethod.invoke(instance);
+            try {
+                Method initMethod = beanDefinition.getBeanClass().getMethod(beanDefinition.getInitMethodName());
+                initMethod.invoke(instance);
+            }catch (Exception e){
+                throw new BeanCreationException("An exception occurred during bean initialization ["+beanDefinition+"]",e);
+            }
+
         }
     }
 
     // 使用非静态工厂方法创建实例
-    private Object createInstanceByFactoryBean(BeanDefinition beanDefinition) throws Exception {
-        Object beanFactory=doGetBean(beanDefinition.getFactoryBeanName());
-        Object[] args = getConstructorArgumentValues(beanDefinition);
-        Method factoryMethod =determineFactoryMethod(beanDefinition,args,beanFactory.getClass());
-        return factoryMethod.invoke(beanFactory,args);
+    private Object createInstanceByFactoryBean(String name,BeanDefinition beanDefinition){
+        try {
+            Object beanFactory=doGetBean(beanDefinition.getFactoryBeanName());
+            Object[] args = getConstructorArgumentValues(beanDefinition);
+            Method factoryMethod =determineFactoryMethod(beanDefinition,args,beanFactory.getClass());
+            return factoryMethod.invoke(beanFactory,args);
+        }catch (Exception e){
+            throw new BeanCreationException("An exception occurred while creating Bean '"+name+"'. ["+beanDefinition+"]",e);
+        }
     }
 
     // 使用静态工厂方法创建实例
-    private Object createInstanceByStaticFactoryMethod(BeanDefinition beanDefinition)
-            throws Exception {
-        Class<?> beanClass = beanDefinition.getBeanClass();
-        Object[] args = getConstructorArgumentValues(beanDefinition);
-        Method staticFactoryMethod = determineFactoryMethod(beanDefinition, args, beanClass);
-        return staticFactoryMethod.invoke(beanClass,args);
+    private Object createInstanceByStaticFactoryMethod(String name,BeanDefinition beanDefinition) {
+        try {
+            Class<?> beanClass = beanDefinition.getBeanClass();
+            Object[] args = getConstructorArgumentValues(beanDefinition);
+            Method staticFactoryMethod = determineFactoryMethod(beanDefinition, args, beanClass);
+            return staticFactoryMethod.invoke(beanClass,args);
+        }catch (Exception e){
+            throw new BeanCreationException("An exception occurred while creating Bean '"+name+"'. ["+beanDefinition+"]",e);
+        }
+
     }
 
     // 使用构造方法来构造对象
-    private Object createInstanceByConstructor(BeanDefinition beanDefinition)
-            throws Exception {
+    private Object createInstanceByConstructor(String name,BeanDefinition beanDefinition) {
         try {
             Object[] args = getConstructorArgumentValues(beanDefinition);
             return determineConstructor(beanDefinition, args).newInstance(args);
-        } catch (SecurityException e1) {
-            log.error("创建bean的实例异常,beanDefinition：" + beanDefinition, e1);
-            throw e1;
+        } catch (Exception e) {
+            throw new BeanCreationException("An exception occurred while creating Bean '"+name+"'. ["+beanDefinition+"]",e);
         }
     }
 
     // 设置属性依赖值
-    private void populateBean(BeanDefinition diValues,Object instance) throws Exception {
+    private void populateBean(BeanDefinition diValues,Object instance) {
         List<PropertyValue> propertyValues = diValues.getPropertyValues();
         // 没有属性依赖直接返回
         if(Assert.isEmptyCollection(propertyValues)){

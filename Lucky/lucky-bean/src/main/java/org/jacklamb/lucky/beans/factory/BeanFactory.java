@@ -18,7 +18,7 @@ public interface BeanFactory {
      * @return bean实例
      * @throws BeansException bean异常
      */
-    Object getBean(String name) throws Exception;
+    Object getBean(String name) throws BeansException;
 
     /**
      * 获取一个bean实例，并将其转化为对应的类型
@@ -26,21 +26,21 @@ public interface BeanFactory {
      * @param requiredType bean的类型，可以是接口或者抽象类
      * @return bean实例
      */
-    <T> T getBean(String name,Class<T> requiredType) throws Exception;
+    <T> T getBean(String name,Class<T> requiredType) throws BeansException;
 
     /**
      * 根据bean的类型来获得实例
      * @param requiredType bean的类型
      * @return bean实例
      */
-    <T> T getBean(Class<T> requiredType) throws Exception;
+    <T> T getBean(Class<T> requiredType) throws BeansException;
 
     /**
      * 获取bean的类型
      * @param name bean的名称
      * @return bean的类型
      */
-    Class<?> getType(String name)throws Exception;
+    Class<?> getType(String name)throws BeansException;
 
     /**
      * 是否包含该名称的bean实例
@@ -55,7 +55,7 @@ public interface BeanFactory {
      * @return 是否为单例
      * @throws Exception
      */
-    boolean isSingleton(String name) throws Exception;
+    boolean isSingleton(String name) throws BeansException;
 
     /**
      * 是否是原型bean
@@ -63,6 +63,6 @@ public interface BeanFactory {
      * @return 是否为原型
      * @throws Exception
      */
-    boolean isPrototype(String name) throws Exception;
+    boolean isPrototype(String name) throws BeansException;
 
 }

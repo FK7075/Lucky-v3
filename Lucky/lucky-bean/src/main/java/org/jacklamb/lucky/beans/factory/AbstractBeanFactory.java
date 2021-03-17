@@ -7,6 +7,7 @@ import org.jacklamb.lucky.beans.BeanReference;
 import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessor;
 import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessorRegistry;
 import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
+import org.jacklamb.lucky.exception.BeansException;
 import org.jacklamb.lucky.exception.MultipleMatchExceptions;
 import org.jacklamb.lucky.exception.NoSuchBeanDefinitionException;
 
@@ -25,23 +26,25 @@ public abstract class AbstractBeanFactory
 
     // bean定义信息
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
-    private final List<BeanPostProcessor> beanPostProcessorList=new ArrayList<>(50);
+    private final List<BeanPostProcessor> beanPostProcessors =new ArrayList<>(50);
 
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T getBean(String name, Class<T> requiredType) throws Exception {
+    public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
         return (T) getBean(name);
     }
 
     @Override
-    public <T> T getBean(Class<T> requiredType) throws Exception {
+    public <T> T getBean(Class<T> requiredType) throws BeansException {
         Set<String> names = getBeanDefinitionNames();
         List<T> beans=new ArrayList<>();
         for (String name : names) {
             try {
                 T instance = getBean(name,requiredType);
-                beans.add(instance);
+                if(requiredType.isAssignableFrom(instance.getClass())){
+                    beans.add(instance);
+                }
             }catch (Exception ignored){}
         }
         int count = beans.size();
@@ -58,7 +61,7 @@ public abstract class AbstractBeanFactory
     }
 
     @Override
-    public Class<?> getType(String name) throws Exception {
+    public Class<?> getType(String name) throws BeansException {
         return getBean(name).getClass();
     }
 
@@ -68,12 +71,12 @@ public abstract class AbstractBeanFactory
     }
 
     @Override
-    public boolean isSingleton(String name) throws Exception {
+    public boolean isSingleton(String name) throws BeansException {
         return getBeanDefinition(name).isSingleton();
     }
 
     @Override
-    public boolean isPrototype(String name) throws Exception {
+    public boolean isPrototype(String name) throws BeansException {
         return getBeanDefinition(name).isPrototype();
     }
 
@@ -107,12 +110,12 @@ public abstract class AbstractBeanFactory
 
     @Override
     public void registerBeanPostProcessor(BeanPostProcessor processor) {
-        this.beanPostProcessorList.add(processor);
+        this.beanPostProcessors.add(processor);
     }
 
     @Override
     public List<BeanPostProcessor> getBeanPostProcessors() {
-        return this.beanPostProcessorList;
+        return this.beanPostProcessors;
     }
 
     @Override
@@ -126,12 +129,12 @@ public abstract class AbstractBeanFactory
     }
 
     //获取构造器的执行参数
-    protected Object[] getConstructorArgumentValues(BeanDefinition beanDefinition) throws Exception {
+    protected Object[] getConstructorArgumentValues(BeanDefinition beanDefinition) throws BeansException {
         return getRealValues(beanDefinition.getConstructorArgumentValues());
     }
 
     //获取构造器参数的真实值，将引用值替换为真实值
-    protected Object[] getRealValues(List<?> constructorArgumentValues) throws Exception {
+    protected Object[] getRealValues(List<?> constructorArgumentValues) throws BeansException {
         //空值
         if(Assert.isEmptyCollection(constructorArgumentValues)){
             return null;
@@ -145,7 +148,7 @@ public abstract class AbstractBeanFactory
     }
 
     //将引用值转化为真实值
-    protected Object getRealValue(Object ref) throws Exception {
+    protected Object getRealValue(Object ref) throws BeansException {
         if(ref==null){
             return null;
         }else if(ref instanceof BeanReference){
@@ -172,5 +175,26 @@ public abstract class AbstractBeanFactory
         } else {
             return ref;
         }
+    }
+
+    protected Object applyPostProcessAfterInitialization(Object instance, String beanName) {
+        for (BeanPostProcessor postProcessor : beanPostProcessors) {
+            instance=postProcessor.postProcessAfterInitialization(instance,beanName);
+            if(instance==null){
+                return null;
+            }
+        }
+        return instance;
+
+    }
+
+    protected Object applyPostProcessBeforeInitialization(Object instance, String beanName){
+        for (BeanPostProcessor postProcessor : beanPostProcessors) {
+            instance=postProcessor.postProcessBeforeInitialization(instance,beanName);
+            if(instance==null){
+                return null;
+            }
+        }
+        return instance;
     }
 }

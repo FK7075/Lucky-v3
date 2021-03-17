@@ -22,7 +22,7 @@ public class Test2 {
 
     private static PreBuildBeanFactory pf=new PreBuildBeanFactory();
 
-//    @Test
+    @Test
     public void singleton() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         bd.setBeanClass(CBean.class);
@@ -35,7 +35,7 @@ public class Test2 {
         pf.registerBeanDefinition("p-b",bd);
     }
 
-//    @Test
+    @Test
     public void initCBean() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         Object[] args={1,"I'M CBean"};
@@ -45,7 +45,7 @@ public class Test2 {
         pf.registerBeanDefinition("c",bd);
     }
 
-//    @Test
+    @Test
     public void initBBean() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         BeanReference br=new BeanReference("c");
@@ -56,7 +56,7 @@ public class Test2 {
         pf.registerBeanDefinition("b",bd);
     }
 
-//    @Test
+    @Test
     public void factoryBBean() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         bd.setBeanClass(MyBeanFactory.class);
@@ -96,7 +96,7 @@ public class Test2 {
         pv.add(new PropertyValue("id",4));
         pv.add(new PropertyValue("name","CBEAN-FIELD"));
         bd.setPropertyValues(pv);
-        bd.setScope(Scope.PROTOTYPE);
+//        bd.setScope(Scope.PROTOTYPE);
         pf.registerBeanDefinition("s-c",bd);
     }
 
@@ -104,17 +104,20 @@ public class Test2 {
     public static void test() throws Exception {
         pf.preInstantiateSingletons();
 //        for (int i = 0; i < 3 ; i++) {
-//            BBean b = (BBean) pf.getBean("b");
-//            System.out.println(b+" ==> "+b.print());
+//            System.out.println("sb ==> "+pf.getBean("s-b"));
+//        }
+//
+//        for (int i = 0; i < 3 ; i++) {
+//            System.out.println("sc ==> "+pf.getBean("s-c"));
 //        }
 
 //        BBean s_b = (BBean) pf.getBean("p-b");
-        BBean s_c = (BBean) pf.getBean("s-b");
-        System.out.println(s_c);
+        BBean s_b = (BBean) pf.getBean("s-b");
+        System.out.println(s_b);
 
 //        BBean bean = pf.getBean("p-b",BBean.class);
-        MyBeanFactory f = pf.getBean(MyBeanFactory.class);
+//        CBean s_c = pf.getBean(CBean.class);
 //        System.out.println(bean);
-        System.out.println(f);
+//        System.out.println(s_c);
     }
 }

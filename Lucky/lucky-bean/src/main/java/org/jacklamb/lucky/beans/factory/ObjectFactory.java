@@ -1,5 +1,7 @@
 package org.jacklamb.lucky.beans.factory;
 
+import org.jacklamb.lucky.exception.BeansException;
+
 /**
  * @author fk
  * @version 1.0
@@ -8,5 +10,5 @@ package org.jacklamb.lucky.beans.factory;
 @FunctionalInterface
 public interface ObjectFactory<T> {
 
-    T getObject() throws Exception;
+    T getObject() throws BeansException;
 }
