@@ -33,6 +33,8 @@ public class GenericBeanDefinition implements BeanDefinition {
     private Constructor<?> constructor;
     // 工厂方法缓存(实例为·原型·类型时可以直接获取)
     private Method factoryMethod;
+    //没有无参构造函数时,传递构造参数的类型和值到cglib动态代理里面去获取有参构造函数进行增强
+    private ThreadLocal<Object[]> realConstructorArgumentValues = new ThreadLocal<>();
 
 
     //设置属性依赖的值
@@ -153,6 +155,16 @@ public class GenericBeanDefinition implements BeanDefinition {
     @Override
     public void setFactoryMethod(Method factoryMethod) {
         this.factoryMethod=factoryMethod;
+    }
+
+    @Override
+    public Object[] getConstructorArgumentRealValues() {
+        return realConstructorArgumentValues.get();
+    }
+
+    @Override
+    public void setConstructorArgumentRealValues(Object[] values) {
+        realConstructorArgumentValues.set(values);
     }
 
     @Override

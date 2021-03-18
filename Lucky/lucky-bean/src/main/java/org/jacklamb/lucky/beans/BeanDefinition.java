@@ -107,4 +107,8 @@ public interface BeanDefinition {
         }
         return true;
     }
+
+    Object[] getConstructorArgumentRealValues();
+
+    void setConstructorArgumentRealValues(Object[] values);
 }

@@ -39,44 +39,6 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
             bean = getSingleton(name,()->doCreateBean(name,definition));
         }
         return (T) bean;
-//        //判断给入的bean名字不能为空
-//        Objects.requireNonNull(name, "beanName不能为空");
-//
-//        //从单例容器中获取实例，如果存在则直接返回此单例对象
-//        Object instance = this.singletonObjects.get(name);
-//        if(instance != null){
-//            return instance;
-//        }
-//
-//        //从早期对象中获取实例
-//        instance = this.earlySingletonObjects.get(name);
-//        BeanDefinition beanDefinition = this.getBeanDefinition(name);
-//        Objects.requireNonNull(beanDefinition, "`"+name+"`的BeanDefinition为空");
-//        if(instance == null ){
-//
-//            //创建实例
-//            instance = doCreateInstance(name,beanDefinition);
-//
-//            // 设置属性依赖
-//            this.setPropertyDIValues(beanDefinition,instance);
-//
-//            // 执行初始化方法
-//            this.doInit(beanDefinition, instance);
-//
-//            /*
-//                实例创建完毕，初始化完毕
-//                1.将此对象的早期对象删除
-//                2.并将此实例加入到单例对象列表中
-//             */
-//
-//            if (beanDefinition.isSingleton()) {
-//                earlySingletonObjects.remove(name);
-//                singletonObjects.put(name, instance);
-//            }
-//            //实例初始化结束后，移除该实例的创建日志
-//            singletonsCurrentlyInCreation.remove(name);
-//        }
-//        return instance;
     }
 
     private Object doCreateBean(String name,BeanDefinition definition){
@@ -170,6 +132,8 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
     private Object createInstanceByConstructor(String name,BeanDefinition beanDefinition) {
         try {
             Object[] args = getConstructorArgumentValues(beanDefinition);
+
+            beanDefinition.setConstructorArgumentRealValues(args);
             return determineConstructor(beanDefinition, args).newInstance(args);
         } catch (Exception e) {
             throw new BeanCreationException("An exception occurred while creating Bean '"+name+"'. ["+beanDefinition+"]",e);
@@ -304,17 +268,19 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
 
     @Override
     public void close() throws IOException {
-        for (String beanName : getBeanDefinitionNames()) {
-            BeanDefinition bd = getBeanDefinition(beanName);
-            if(bd.isSingleton() && !Assert.isBlankString(bd.getDestroyMethodName())){
+        super.close();
+        for (String singletonName : getSingletonNames()) {
+            BeanDefinition bd = getBeanDefinition(singletonName);
+            if(Assert.isBlankString(bd.getDestroyMethodName())){
                 try {
-                    Object instance = this.getSingleton(beanName,true);
+                    Object instance = getSingleton(singletonName);
                     Method destroyMethod = instance.getClass().getMethod(bd.getDestroyMethodName());
                     destroyMethod.invoke(instance);
                 } catch (Exception e) {
-                    log.error("执行bean[" + beanName + "] " + bd + " 的销毁方法执行异常！", e);
+                    log.error("执行bean[" + singletonName + "] " + bd + " 的销毁方法执行异常！", e);
                 }
             }
         }
+        clearSingletonCache();
     }
 }
