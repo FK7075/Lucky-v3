@@ -1,5 +1,6 @@
 package org.jacklamb.lucky.aop.advisor;
 
+import org.jacklamb.lucky.aop.advice.Advice;
 import org.jacklamb.lucky.aop.pointcut.AspectJExpressionPointcut;
 import org.jacklamb.lucky.aop.pointcut.Pointcut;
 
@@ -11,7 +12,8 @@ import org.jacklamb.lucky.aop.pointcut.Pointcut;
 public class AspectJPointcutAdvisor implements PointcutAdvisor{
 
     //用户配置的advice的bean的名字
-    private final String adviceBeanName;
+    private String adviceBeanName;
+    private Advice advice;
     //切入点表达式
     private final String expression;
     //AspectJ表达式切入点对象
@@ -23,9 +25,20 @@ public class AspectJPointcutAdvisor implements PointcutAdvisor{
         this.pointcut=new AspectJExpressionPointcut(expression);
     }
 
+    public AspectJPointcutAdvisor(Advice advice, String expression) {
+        this.advice = advice;
+        this.expression = expression;
+        this.pointcut=new AspectJExpressionPointcut(expression);
+    }
+
     @Override
     public String getAdvisorBeanName() {
         return adviceBeanName;
+    }
+
+    @Override
+    public Advice getAdvisor() {
+        return advice;
     }
 
     @Override

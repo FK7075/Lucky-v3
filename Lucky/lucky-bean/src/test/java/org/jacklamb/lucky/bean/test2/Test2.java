@@ -4,7 +4,7 @@ import org.jacklamb.lucky.beans.BeanReference;
 import org.jacklamb.lucky.beans.GenericBeanDefinition;
 import org.jacklamb.lucky.beans.PropertyValue;
 import org.jacklamb.lucky.beans.factory.PreBuildBeanFactory;
-import org.jacklamb.lucky.beans.Scope;
+import org.jacklamb.lucky.beans.BeanScope;
 import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -31,7 +31,7 @@ public class Test2 {
 
         bd=new GenericBeanDefinition();
         bd.setBeanClass(BBean.class);
-        bd.setScope(Scope.PROTOTYPE);
+        bd.setScope(BeanScope.PROTOTYPE);
         pf.registerBeanDefinition("p-b",bd);
     }
 
@@ -40,7 +40,7 @@ public class Test2 {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         Object[] args={1,"I'M CBean"};
         bd.setBeanClass(CBean.class);
-        bd.setScope(Scope.PROTOTYPE);
+        bd.setScope(BeanScope.PROTOTYPE);
         bd.setConstructorArgumentValues(Arrays.asList(args));
         pf.registerBeanDefinition("c",bd);
     }
@@ -86,7 +86,7 @@ public class Test2 {
         pv.add(new PropertyValue("cBean",new BeanReference("s-c")));
         pv.add(new PropertyValue("name","BBEAN-FIELD"));
         bd.setPropertyValues(pv);
-        bd.setScope(Scope.PROTOTYPE);
+        bd.setScope(BeanScope.PROTOTYPE);
         pf.registerBeanDefinition("s-b",bd);
 
         bd=new GenericBeanDefinition();

@@ -1,6 +1,6 @@
 package org.jacklamb.lucky.aop.advice;
 
-import java.lang.reflect.Method;
+import org.aspectj.lang.JoinPoint;
 
 /**
  * 异常执行的后置增强
@@ -10,5 +10,5 @@ import java.lang.reflect.Method;
  */
 public interface AfterThrowingAdvice extends Advice {
 
-    void afterThrowing(Object target, Method[] method,Object[] args,Throwable e);
+    void afterThrowing(Throwable e);
 }

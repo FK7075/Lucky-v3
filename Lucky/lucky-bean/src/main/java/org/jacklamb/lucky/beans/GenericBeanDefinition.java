@@ -14,7 +14,7 @@ public class GenericBeanDefinition implements BeanDefinition {
     // bean的名称
     private Class<?> beanClass;
     // scope 默认单例
-    private Scope scope = Scope.SINGLETON;
+    private BeanScope beanScope = BeanScope.SINGLETON;
     // 是否为懒加载 默认false
     private boolean isLazy=false;
     // 工厂bean名
@@ -53,8 +53,8 @@ public class GenericBeanDefinition implements BeanDefinition {
     }
 
     //设置scope
-    public void setScope(Scope scope) {
-        this.scope = scope;
+    public void setScope(BeanScope beanScope) {
+        this.beanScope = beanScope;
     }
 
     //设置是否懒加载
@@ -88,18 +88,18 @@ public class GenericBeanDefinition implements BeanDefinition {
     }
 
     @Override
-    public Scope getScope() {
-        return this.scope;
+    public BeanScope getScope() {
+        return this.beanScope;
     }
 
     @Override
     public boolean isSingleton() {
-        return Scope.SINGLETON.equals(this.scope);
+        return BeanScope.SINGLETON.equals(this.beanScope);
     }
 
     @Override
     public boolean isPrototype() {
-        return Scope.PROTOTYPE.equals(this.scope);
+        return BeanScope.PROTOTYPE.equals(this.beanScope);
     }
 
     @Override
@@ -171,7 +171,7 @@ public class GenericBeanDefinition implements BeanDefinition {
     public String toString() {
         return "GenericBeanDefinition{" +
                 "beanClass=" + beanClass +
-                ", scope=" + scope +
+                ", scope=" + beanScope +
                 ", factoryBeanName='" + factoryBeanName + '\'' +
                 ", factoryMethodName='" + factoryMethodName + '\'' +
                 ", initMethodName='" + initMethodName + '\'' +
@@ -188,7 +188,7 @@ public class GenericBeanDefinition implements BeanDefinition {
         result = prime * result + ((factoryBeanName == null) ? 0 : factoryBeanName.hashCode());
         result = prime * result + ((factoryMethodName == null) ? 0 : factoryMethodName.hashCode());
         result = prime * result + ((initMethodName == null) ? 0 : initMethodName.hashCode());
-        result = prime * result + ((scope == null) ? 0 : scope.hashCode());
+        result = prime * result + ((beanScope == null) ? 0 : beanScope.hashCode());
         return result;
     }
 
@@ -226,10 +226,10 @@ public class GenericBeanDefinition implements BeanDefinition {
                 return false;
         } else if (!initMethodName.equals(other.initMethodName))
             return false;
-        if (scope == null) {
-            return other.scope == null;
+        if (beanScope == null) {
+            return other.beanScope == null;
         } else {
-            return scope.equals(other.scope);
+            return beanScope.equals(other.beanScope);
         }
     }
 }

@@ -1,5 +1,7 @@
 package org.jacklamb.lucky.aop.advice;
 
+import org.aspectj.lang.ProceedingJoinPoint;
+
 import java.lang.reflect.Method;
 
 /**

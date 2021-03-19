@@ -1,6 +1,6 @@
 package org.jacklamb.lucky.aop.advice;
 
-import java.lang.reflect.Method;
+import org.aspectj.lang.JoinPoint;
 
 /**
  * 前置增强通知
@@ -10,5 +10,5 @@ import java.lang.reflect.Method;
  */
 public interface MethodBeforeAdvice extends Advice {
 
-    void before(Object target, Method method, Object[] args);
+    void before();
 }

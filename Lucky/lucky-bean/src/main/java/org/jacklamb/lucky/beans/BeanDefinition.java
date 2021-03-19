@@ -23,7 +23,7 @@ public interface BeanDefinition {
     /**
      * Scope
      */
-    Scope getScope();
+    BeanScope getScope();
 
     /**
      * 是否为单例

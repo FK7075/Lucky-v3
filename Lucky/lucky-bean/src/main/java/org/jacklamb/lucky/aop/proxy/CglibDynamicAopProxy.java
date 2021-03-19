@@ -1,5 +1,6 @@
 package org.jacklamb.lucky.aop.proxy;
 
+import com.lucky.utils.reflect.ClassUtils;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
@@ -20,10 +21,10 @@ import java.util.List;
  */
 public class CglibDynamicAopProxy implements AopProxy , MethodInterceptor {
 
-    private static Enhancer enhancer = new Enhancer();
+    private static final Enhancer enhancer = new Enhancer();
     private final String beanName;
     private final Object target;
-    private List<Advisor> matchAdvisors;
+    private final List<Advisor> matchAdvisors;
     private final BeanFactory beanFactory;
 
     public CglibDynamicAopProxy(String beanName, Object target, List<Advisor> matchAdvisors, BeanFactory beanFactory) {
@@ -44,16 +45,10 @@ public class CglibDynamicAopProxy implements AopProxy , MethodInterceptor {
         enhancer.setSuperclass(targetClass);
         enhancer.setInterfaces(targetClass.getInterfaces());
         enhancer.setCallback(this);
-        Constructor<?> constructor = null;
-        try {
-            constructor=targetClass.getConstructor(new Class[]{});
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
+        Constructor<?> constructor = ClassUtils.getConstructor(targetClass,new Class[]{});
         if(constructor!=null){
             return enhancer.create();
-        }
-        else {
+        } else {
             BeanDefinition bd = ((DefaultBeanFactory)beanFactory).getBeanDefinition(beanName);
             return enhancer.create(bd.getConstructor().getParameterTypes(),bd.getConstructorArgumentRealValues());
         }

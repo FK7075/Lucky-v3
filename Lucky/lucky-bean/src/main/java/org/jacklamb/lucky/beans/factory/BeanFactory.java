@@ -1,5 +1,7 @@
 package org.jacklamb.lucky.beans.factory;
 
+import org.jacklamb.lucky.beans.BeanDefinitionRegister;
+import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessorRegistry;
 import org.jacklamb.lucky.exception.BeansException;
 
 /**
@@ -8,7 +10,7 @@ import org.jacklamb.lucky.exception.BeansException;
  * @version 1.0
  * @date 2021/3/12 0012 16:34
  */
-public interface BeanFactory {
+public interface BeanFactory extends BeanPostProcessorRegistry {
 
     String FACTORY_BEAN_PREFIX = "&";
 

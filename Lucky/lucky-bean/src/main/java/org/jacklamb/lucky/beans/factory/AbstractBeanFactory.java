@@ -4,6 +4,7 @@ import com.lucky.utils.base.Assert;
 import org.jacklamb.lucky.beans.BeanDefinition;
 import org.jacklamb.lucky.beans.BeanDefinitionRegister;
 import org.jacklamb.lucky.beans.BeanReference;
+import org.jacklamb.lucky.beans.aware.BeanFactoryAware;
 import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessor;
 import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessorRegistry;
 import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
@@ -22,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2021/3/16 0016 16:08
  */
 public abstract class AbstractBeanFactory
-        implements BeanFactory, BeanDefinitionRegister, BeanPostProcessorRegistry, Closeable {
+        implements BeanFactory, BeanDefinitionRegister, Closeable {
 
     // bean定义信息
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
@@ -110,6 +111,9 @@ public abstract class AbstractBeanFactory
 
     @Override
     public void registerBeanPostProcessor(BeanPostProcessor processor) {
+        if (processor instanceof BeanFactoryAware){
+            ((BeanFactoryAware)processor).setBeanFactory(this);
+        }
         this.beanPostProcessors.add(processor);
     }
 

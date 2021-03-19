@@ -1,6 +1,6 @@
 package org.jacklamb.lucky.aop.advice;
 
-import java.lang.reflect.Method;
+import org.aspectj.lang.JoinPoint;
 
 /**
  * 后置增强通知
@@ -10,5 +10,5 @@ import java.lang.reflect.Method;
  */
 public interface MethodAfterAdvice extends Advice {
 
-    void after(Object target, Method method,Object[] args);
+    void after();
 }

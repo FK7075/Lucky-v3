@@ -2,7 +2,7 @@ package org.jacklamb.lucky.bean.test1;
 
 import org.jacklamb.lucky.beans.GenericBeanDefinition;
 import org.jacklamb.lucky.beans.factory.PreBuildBeanFactory;
-import org.jacklamb.lucky.beans.Scope;
+import org.jacklamb.lucky.beans.BeanScope;
 import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
 import org.junit.AfterClass;
 import org.junit.Test;
@@ -43,7 +43,7 @@ public class BeanFactoryTest {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         bd.setBeanClass(ABeanFactory.class);
         bd.setFactoryMethodName("getABeanByStatic");
-        bd.setScope(Scope.PROTOTYPE);
+        bd.setScope(BeanScope.PROTOTYPE);
         df.registerBeanDefinition("a3",bd);
     }
 

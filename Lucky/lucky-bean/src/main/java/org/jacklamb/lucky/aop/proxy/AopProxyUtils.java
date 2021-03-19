@@ -1,6 +1,7 @@
 package org.jacklamb.lucky.aop.proxy;
 
 import com.lucky.utils.base.Assert;
+import org.jacklamb.lucky.aop.advice.Advice;
 import org.jacklamb.lucky.aop.advisor.Advisor;
 import org.jacklamb.lucky.aop.advisor.PointcutAdvisor;
 import org.jacklamb.lucky.beans.factory.BeanFactory;
@@ -37,7 +38,9 @@ public class AopProxyUtils {
             if (ad instanceof PointcutAdvisor) {
                 //如果当前方法和切入点匹配就是要加入增强功能的方法
                 if (((PointcutAdvisor) ad).getPointcut().matchMethod(beanClass,method)) {
-                    advices.add(beanFactory.getBean(ad.getAdvisorBeanName()));
+                    Object advice = ad.getAdvisor();
+                    advice= advice == null?beanFactory.getBean(ad.getAdvisorBeanName()):advice;
+                    advices.add(advice);
                 }
             }
         }
