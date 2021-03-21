@@ -21,7 +21,6 @@ import java.io.IOException;
  */
 public class AnnotationBeanDefinitionReader extends AbstractBeanDefinitionReader {
 
-
     public AnnotationBeanDefinitionReader(BeanDefinitionRegister registry) {
         super(registry);
     }
@@ -32,10 +31,10 @@ public class AnnotationBeanDefinitionReader extends AbstractBeanDefinitionReader
     }
 
     @Override
-    public void loadBeanDefinitions(Resource... resource) throws Exception {
-        if (resource != null && resource.length > 0) {
-            for (Resource r : resource) {
-                searchAndRegistryBeanDefinition(r);
+    public void loadBeanDefinitions(Resource... resources) throws Exception {
+        if(!Assert.isEmptyArray(resources)){
+            for (Resource resource : resources) {
+                searchAndRegistryBeanDefinition(resource);
             }
         }
     }

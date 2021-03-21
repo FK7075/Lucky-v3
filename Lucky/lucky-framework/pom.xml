@@ -4,35 +4,25 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.jacklamb.lucky</groupId>
-    <artifactId>lucky</artifactId>
-    <version>1.0-SNAPSHOT</version>
-  </parent>
-
-  <artifactId>lucky-bean</artifactId>
-  <name>lucky-bean</name>
+  <groupId>org.jacklamb.lucky.framework</groupId>
+  <artifactId>lucky-framework</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <name>lucky-framework</name>
   <!-- FIXME change it to the project's website -->
   <url>http://www.example.com</url>
 
   <dependencies>
+
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
+      <groupId>com.lucky.jacklamb</groupId>
+      <artifactId>lucky-junit</artifactId>
+      <version>1.0-SNAPSHOT</version>
     </dependency>
 
     <dependency>
       <groupId>com.lucky.jacklamb</groupId>
       <artifactId>lucky-utils</artifactId>
       <version>1.0-SNAPSHOT</version>
-    </dependency>
-
-    <dependency>
-      <groupId>org.aspectj</groupId>
-      <artifactId>aspectjweaver</artifactId>
-      <version>1.9.6</version>
     </dependency>
   </dependencies>
 

@@ -7,4 +7,5 @@ package org.jacklamb.lucky.aop.advice;
  * @date 2021/3/18 0018 9:46
  */
 public interface Advice {
+
 }

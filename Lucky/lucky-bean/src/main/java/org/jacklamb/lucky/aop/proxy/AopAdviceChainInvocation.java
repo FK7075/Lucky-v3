@@ -14,7 +14,7 @@ import java.util.List;
  * @version 1.0
  * @date 2021/3/18 0018 15:30
  */
-public class AopAdviceChainInvocation {
+public class   AopAdviceChainInvocation {
 
     private static Method invokeMethod = MethodUtils.getMethod(AopAdviceChainInvocation.class,"invoke");
     private Object proxy;

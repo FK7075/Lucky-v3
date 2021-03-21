@@ -1,6 +1,9 @@
 package org.jacklamb.lucky.context;
 
-import com.lucky.utils.fileload.Resource;
+import com.lucky.utils.base.ArrayUtils;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author fk
@@ -9,26 +12,38 @@ import com.lucky.utils.fileload.Resource;
  */
 public class AnnotationConfigApplicationContext extends AbstractApplicationContext {
 
-    private ClassPathBeanDefinitionScanner scanner;
+    private Set<Class<?>> configClasses = new HashSet<>();
+    private Set<String> packageNames = new HashSet<>();
 
-    private AnnotationBeanDefinitionReader reader;
-
-    @Override
-    public ClassLoader getClassLoader() {
-        return getClass().getClassLoader();
+    public void setConfigClasses(Set<Class<?>> configClasses) {
+        this.configClasses = configClasses;
     }
 
-    @Override
-    public Resource getResource(String location) {
-        return null;
+    public void setPackageNames(Set<String> packageNames) {
+        this.packageNames = packageNames;
     }
 
+    public void addConfigClass(Class<?> configClass) {
+        this.configClasses.add(configClass);
+    }
 
-    public AnnotationConfigApplicationContext(Class<?>... componentClasses){
+    public void addPackageName(String packageName) {
+        this.packageNames.add(packageName);
+    }
 
+    public AnnotationConfigApplicationContext(Class<?>... configClasses){
+        super();
+        setConfigClasses(ArrayUtils.arrayToSet(configClasses));
+        refresh();
     }
 
     public AnnotationConfigApplicationContext(String... basePackages){
+        super();
+        setPackageNames(ArrayUtils.arrayToSet(basePackages));
+        refresh();
+    }
+
+    public void refresh(){
 
     }
 

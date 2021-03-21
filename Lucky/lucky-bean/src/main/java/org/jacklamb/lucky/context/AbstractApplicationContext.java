@@ -1,10 +1,15 @@
 package org.jacklamb.lucky.context;
 
+import com.lucky.utils.fileload.Resource;
+import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver;
+import org.jacklamb.lucky.beans.BeanDefinitionRegister;
 import org.jacklamb.lucky.beans.factory.BeanFactory;
 import org.jacklamb.lucky.beans.factory.PreBuildBeanFactory;
 import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessor;
+import org.jacklamb.lucky.context.scanner.FileScanner;
 import org.jacklamb.lucky.exception.BeansException;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -14,11 +19,15 @@ import java.util.List;
  */
 public abstract class AbstractApplicationContext implements ApplicationContext {
 
-    protected BeanFactory beanFactory;
+    protected PreBuildBeanFactory beanFactory;
 
     public AbstractApplicationContext() {
-        super();
         this.beanFactory = new PreBuildBeanFactory();
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return getClass().getClassLoader();
     }
 
     //获取bean定义对象

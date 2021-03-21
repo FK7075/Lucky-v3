@@ -1,15 +1,14 @@
-package org.jacklamb.lucky.beans.factory;
+package org.jacklamb.luckyframework.beans.factory;
 
-import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessorRegistry;
-import org.jacklamb.lucky.exception.BeansException;
+import org.jacklamb.luckyframework.exception.BeansException;
 
 /**
  * Bean工厂
- * @author fk
- * @version 1.0
- * @date 2021/3/12 0012 16:34
+ * @author fk7075
+ * @version 1.0.0
+ * @date 2021/3/21 下午10:59
  */
-public interface BeanFactory extends BeanPostProcessorRegistry {
+public interface BeanFactory {
 
     String FACTORY_BEAN_PREFIX = "&";
 

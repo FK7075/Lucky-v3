@@ -1,7 +1,9 @@
 package org.jacklamb.lucky.context;
 
+import com.lucky.utils.fileload.Resource;
 import com.lucky.utils.fileload.ResourceLoader;
 import org.jacklamb.lucky.beans.factory.BeanFactory;
+import org.jacklamb.lucky.context.scanner.FileScanner;
 
 /**
  * @author fk
@@ -10,4 +12,12 @@ import org.jacklamb.lucky.beans.factory.BeanFactory;
  */
 public interface ApplicationContext extends BeanFactory , ResourceLoader {
 
+    @Override
+    default Resource getResource(String location) {
+        return FileScanner.getResource(location);
+    }
+
+    default Resource[] getResources(String location){
+        return FileScanner.getResources(location);
+    }
 }

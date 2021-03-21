@@ -11,6 +11,7 @@
 
   <modules>
     <module>lucky-bean</module>
+      <module>lucky-framework</module>
   </modules>
 
   <name>lucky</name>
@@ -33,7 +34,7 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
-      <beanScope>test</beanScope>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 

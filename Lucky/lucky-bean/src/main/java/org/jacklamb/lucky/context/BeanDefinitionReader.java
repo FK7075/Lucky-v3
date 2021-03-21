@@ -14,5 +14,5 @@ public interface BeanDefinitionReader {
     void loadBeanDefinition(Resource resource) throws Exception;
 
     //加载多个bean定义
-    void loadBeanDefinitions(Resource... resource) throws Exception;
+    void loadBeanDefinitions(Resource... resources) throws Exception;
 }
