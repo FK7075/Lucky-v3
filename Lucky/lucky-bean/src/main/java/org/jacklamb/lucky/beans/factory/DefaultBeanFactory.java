@@ -7,11 +7,9 @@ import org.jacklamb.lucky.exception.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author fk
@@ -34,7 +32,7 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
         if(sharedInstance != null){
             bean=sharedInstance;
         }else{
-            BeanDefinition definition = getBeanDefinition(name);
+            BeanDefinition definition = getBeanDefinitions(name);
             Assert.notNull(definition,"can not find the definition of bean '" + name + "'");
             bean = getSingleton(name,()->doCreateBean(name,definition));
         }
@@ -270,7 +268,7 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
     public void close() throws IOException {
         super.close();
         for (String singletonName : getSingletonNames()) {
-            BeanDefinition bd = getBeanDefinition(singletonName);
+            BeanDefinition bd = getBeanDefinitions(singletonName);
             if(Assert.isBlankString(bd.getDestroyMethodName())){
                 try {
                     Object instance = getSingleton(singletonName);

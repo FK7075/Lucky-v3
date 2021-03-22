@@ -1,7 +1,9 @@
 package org.jacklamb.lucky.beans.factory;
 
+import com.lucky.utils.type.ResolvableType;
 import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessorRegistry;
 import org.jacklamb.lucky.exception.BeansException;
+import org.jacklamb.lucky.exception.NoSuchBeanDefinitionException;
 
 /**
  * Bean工厂
@@ -35,6 +37,14 @@ public interface BeanFactory extends BeanPostProcessorRegistry {
      * @return bean实例
      */
     <T> T getBean(Class<T> requiredType) throws BeansException;
+
+    <T> T getBean(Class<T> requiredType, Object... args) throws BeansException;
+
+    <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType);
+
+    <T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType);
+
+    boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException;
 
     /**
      * 获取bean的类型

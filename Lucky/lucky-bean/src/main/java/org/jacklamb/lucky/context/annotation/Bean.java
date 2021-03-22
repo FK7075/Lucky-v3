@@ -1,5 +1,6 @@
 package org.jacklamb.lucky.context.annotation;
 
+import com.lucky.utils.annotation.AliasFor;
 import org.jacklamb.lucky.beans.factory.Autowire;
 
 import java.lang.annotation.*;

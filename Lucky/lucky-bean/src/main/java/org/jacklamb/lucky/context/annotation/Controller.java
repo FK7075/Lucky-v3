@@ -1,20 +1,20 @@
 package org.jacklamb.lucky.context.annotation;
 
+import com.lucky.utils.annotation.AliasFor;
+
 import java.lang.annotation.*;
 
 /**
- * @author fk7075
- * @version 1.0.0
- * @date 2021/3/22 上午1:32
+ * @author fk
+ * @version 1.0
+ * @date 2021/3/19 0019 15:32
  */
-
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Component
-public @interface Configuration {
+public @interface Controller {
 
+    @AliasFor(annotation = Component.class)
     String value() default "";
-
-    boolean proxyBeanMethods() default true;
 }

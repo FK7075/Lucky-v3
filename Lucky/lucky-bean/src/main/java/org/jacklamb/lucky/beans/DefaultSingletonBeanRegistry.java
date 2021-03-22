@@ -1,9 +1,7 @@
 package org.jacklamb.lucky.beans;
 
-import com.lucky.utils.base.ArrayUtils;
 import com.lucky.utils.base.Assert;
-import org.jacklamb.lucky.beans.factory.AbstractBeanFactory;
-import org.jacklamb.lucky.beans.factory.DefaultBeanFactory;
+import org.jacklamb.lucky.beans.factory.DefaultListableBeanFactory;
 import org.jacklamb.lucky.beans.factory.ObjectFactory;
 import org.jacklamb.lucky.exception.BeanCreationNotAllowedException;
 import org.slf4j.Logger;
@@ -18,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0
  * @date 2021/3/16 0016 16:57
  */
-public abstract class DefaultSingletonBeanRegistry extends AbstractBeanFactory implements SingletonBeanRegistry  {
+public abstract class DefaultSingletonBeanRegistry extends DefaultListableBeanFactory implements SingletonBeanRegistry  {
 
     private final static Logger log= LoggerFactory.getLogger(DefaultSingletonBeanRegistry.class);
 
@@ -121,14 +119,14 @@ public abstract class DefaultSingletonBeanRegistry extends AbstractBeanFactory i
                 if (log.isDebugEnabled()){
                     log.debug("Creating shared instance of singleton bean '" + beanName + "'");
                 }
-                boolean isSingleton = getBeanDefinition(beanName).isSingleton();
+                boolean isSingleton = getBeanDefinitions(beanName).isSingleton();
 //                if(isSingleton){
 //
 //                }
 //                this.singletonsCurrentlyInCreation.add(beanName);
                 singletonObject = singletonFactory.getObject();
 //
-                if(getBeanDefinition(beanName).isSingleton()){
+                if(getBeanDefinitions(beanName).isSingleton()){
                     addSingleton(beanName, singletonObject);
                 }
             }
