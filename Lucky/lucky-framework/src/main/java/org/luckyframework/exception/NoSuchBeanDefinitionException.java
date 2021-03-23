@@ -11,4 +11,8 @@ public class NoSuchBeanDefinitionException extends RuntimeException {
         super("No bean named '" + type + "' available");
     }
 
+    public NoSuchBeanDefinitionException(String message){
+        super(message);
+    }
+
 }

@@ -24,6 +24,8 @@ public class Test01 {
                 new PropertyValue("id",12),
                 new PropertyValue("b",new BeanReference("b"))
         };
+        Object[] c ={"A-NAME"};
+        bd.setConstructorArgumentValues(c);
         bd.setPropertyValues(p);
         bd.setBeanScope(BeanScope.PROTOTYPE);
         sf.registerBeanDefinition("a",bd);
@@ -37,14 +39,10 @@ public class Test01 {
         bd.setPropertyValues(p2);
 //        bd.setBeanScope(BeanScope.PROTOTYPE);
         sf.registerBeanDefinition("b",bd);
-
-
-        for (int i = 0; i < 3; i++) {
-//            BBean b = sf.getBean("b", BBean.class);
-//            System.out.println("b -> "+b+" , ab -> "+b.getA().getB());
-
-            ABean a = sf.getBean("a", ABean.class);
-            System.out.println("a -> "+a+" , b -> "+a.getB());
-        }
+        sf.getBean("b");
+        ABean bean = sf.getBean(ABean.class);
+        Object bean1 = sf.getBean("a", "AAAA_NAME");
+        System.out.println(bean);
+        System.out.println(bean1);
     }
 }

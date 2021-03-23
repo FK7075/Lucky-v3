@@ -10,6 +10,20 @@ public class ABean {
     private Integer id;
     private BBean b;
 
+    private String name;
+
+    public ABean(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public Integer getId() {
         return id;
     }
@@ -24,5 +38,15 @@ public class ABean {
 
     public void setB(BBean b) {
         this.b = b;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("ABean{");
+        sb.append("id=").append(id);
+        sb.append(", b=").append(b);
+        sb.append(", name='").append(name).append('\'');
+        sb.append('}');
+        return sb.toString();
     }
 }

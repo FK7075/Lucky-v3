@@ -16,10 +16,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -218,7 +215,7 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
             }
             return ct;
         } else {
-            throw new Exception("不存在对应的构造方法！" + definition);
+            throw new Exception("There is no corresponding construction method" + definition);
         }
 
     }
@@ -273,7 +270,7 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
             }
             return method;
         }else{
-            throw new Exception("不存在对应的方法！" + definition);
+            throw new Exception("There is no corresponding method" + definition);
         }
 
     }
@@ -295,7 +292,7 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
 
     @Override
     public Class<?> getType(String name) throws BeansException {
-        return null;
+        return getBean(name).getClass();
     }
 
 
@@ -306,13 +303,51 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T> T getBean(Class<T> requiredType) throws BeansException {
-        return null;
+        List<String> matchNames = new ArrayList<>();
+        List<Object> matchObjects = new ArrayList<>();
+        List<Object> equalsObjects = new ArrayList<>();
+        String[] names = getBeanDefinitionNames();
+        for (String name : names) {
+            Object bean = getBean(name);
+            if(bean == null){
+                continue;
+            }
+            Class<?> beanClass = bean.getClass();
+            if(beanClass.equals(requiredType)){
+                equalsObjects.add(bean);
+                matchNames.add(name);
+                continue;
+            }
+            if(requiredType.isAssignableFrom(bean.getClass())){
+                matchObjects.add(bean);
+                matchNames.add(name);
+            }
+        }
+        if(equalsObjects.size() == 1){
+            return (T) equalsObjects.get(0);
+        }
+
+        if(matchObjects.size() == 1){
+            return (T) matchObjects.get(0);
+        }
+        if(equalsObjects.size()==0 && matchObjects.size()==0){
+            throw new NoSuchBeanDefinitionException(requiredType);
+        }
+        throw new NoSuchBeanDefinitionException("There are multiple beans matching the type '"+requiredType+"' "+matchNames);
     }
 
     @Override
     public Object getBean(String name, Object... args) throws BeansException {
-        return null;
+        BeanDefinition definition = getBeanDefinition(name);
+        if(definition == null){
+            throw new NoSuchBeanDefinitionException("No definition information found for bean name '"+name+"'");
+        }
+        if(definition instanceof GenericBeanDefinition){
+            ((GenericBeanDefinition)definition).setConstructorArgumentValues(args);
+        }
+        return doCreateBean(name,definition);
     }
 
     @Override
@@ -322,21 +357,25 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
 
     @Override
     public boolean isTypeMatch(String name, Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
-        return false;
+        Object bean = getBean(name);
+        if(bean == null){
+            throw new NoSuchBeanDefinitionException("No definition information found for bean name '"+name+"'");
+        }
+        return typeToMatch.isAssignableFrom(getBean(name).getClass());
     }
 
     @Override
     public boolean containsBean(String name) {
-        return false;
+        return containsBeanDefinition(name);
     }
 
     @Override
     public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
-        return false;
+        return getBeanDefinition(name).isSingleton();
     }
 
     @Override
     public boolean isPrototype(String name) throws NoSuchBeanDefinitionException {
-        return false;
+        return getBeanDefinition(name).isPrototype();
     }
 }
