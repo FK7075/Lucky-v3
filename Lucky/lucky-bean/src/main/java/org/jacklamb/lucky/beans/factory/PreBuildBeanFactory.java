@@ -33,7 +33,7 @@ public class PreBuildBeanFactory extends DefaultBeanFactory {
     public void preInstantiateSingletons() throws Exception {
         synchronized (beanNames){
             for (String beanName : beanNames) {
-                BeanDefinition definition = getBeanDefinitions(beanName);
+                BeanDefinition definition = getBeanDefinition(beanName);
                 if(definition.isSingleton() && !definition.isLazy()){
                     doGetBean(beanName);
                     if(log.isDebugEnabled()){

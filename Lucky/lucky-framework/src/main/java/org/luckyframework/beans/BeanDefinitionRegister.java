@@ -1,6 +1,6 @@
-package org.jacklamb.lucky.beans;
+package org.luckyframework.beans;
 
-import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
+import org.luckyframework.exception.BeanDefinitionRegisterException;
 
 import java.util.Collection;
 import java.util.Set;
@@ -24,9 +24,9 @@ public interface BeanDefinitionRegister {
     //移除bean的定义
     void removeBeanDefinition(String beanName);
 
-    //获取所有bean的定义
-    Collection<BeanDefinition> getBeanDefinitions();
+    int getBeanDefinitionCount();
 
     //获取所有bean定义的注册名
-   String[] getBeanDefinitionNames();
+    String[] getBeanDefinitionNames();
+
 }

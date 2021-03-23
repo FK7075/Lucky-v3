@@ -4,19 +4,23 @@ import com.lucky.utils.annotation.Nullable;
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.base.StringUtils;
 import com.lucky.utils.reflect.ClassUtils;
+import com.lucky.utils.reflect.MethodUtils;
+import com.lucky.utils.type.AnnotationUtils;
 import com.lucky.utils.type.ResolvableType;
 import org.jacklamb.lucky.beans.BeanDefinition;
 import org.jacklamb.lucky.beans.BeanDefinitionRegister;
 import org.jacklamb.lucky.beans.BeanReference;
 import org.jacklamb.lucky.beans.aware.BeanFactoryAware;
 import org.jacklamb.lucky.beans.postprocessor.BeanPostProcessor;
-import org.jacklamb.lucky.exception.BeanDefinitionRegisterException;
-import org.jacklamb.lucky.exception.BeansException;
-import org.jacklamb.lucky.exception.MultipleMatchExceptions;
-import org.jacklamb.lucky.exception.NoSuchBeanDefinitionException;
+import org.jacklamb.lucky.exception.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.io.Serializable;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +34,7 @@ import java.util.stream.Stream;
 public abstract class DefaultListableBeanFactory
         implements ListableBeanFactory, BeanDefinitionRegister, Closeable {
 
+    private final static Logger logger = LoggerFactory.getLogger(DefaultListableBeanFactory.class);
     // bean定义信息
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
     private final List<BeanPostProcessor> beanPostProcessors =new ArrayList<>(50);
@@ -50,8 +55,7 @@ public abstract class DefaultListableBeanFactory
 
     @Override
     public <T> T getBean(Class<T> requiredType) throws BeansException {
-        Assert.notNull(requiredType, "Required type must not be null");
-        return (T) getBeanProvider(ResolvableType.forRawClass(requiredType));
+        return getBean(requiredType, (Object[]) null);
     }
 
     @Override
@@ -76,12 +80,12 @@ public abstract class DefaultListableBeanFactory
 
     @Override
     public boolean isSingleton(String name) throws BeansException {
-        return getBeanDefinitions(name).isSingleton();
+        return getBeanDefinition(name).isSingleton();
     }
 
     @Override
     public boolean isPrototype(String name) throws BeansException {
-        return getBeanDefinitions(name).isPrototype();
+        return getBeanDefinition(name).isPrototype();
     }
 
     @Override
@@ -99,94 +103,7 @@ public abstract class DefaultListableBeanFactory
 
     @Nullable
     private <T> T resolveBean(ResolvableType requiredType, @Nullable Object[] args, boolean nonUniqueAsNull) {
-        NamedBeanHolder<T> namedBean = resolveNamedBean(requiredType, args, nonUniqueAsNull);
-        if (namedBean != null) {
-            return namedBean.getBeanInstance();
-        }
-        BeanFactory parent = getParentBeanFactory();
-        if (parent instanceof DefaultListableBeanFactory) {
-            return ((DefaultListableBeanFactory) parent).resolveBean(requiredType, args, nonUniqueAsNull);
-        }
-        else if (parent != null) {
-            ObjectProvider<T> parentProvider = parent.getBeanProvider(requiredType);
-            if (args != null) {
-                return parentProvider.getObject(args);
-            }
-            else {
-                return (nonUniqueAsNull ? parentProvider.getIfUnique() : parentProvider.getIfAvailable());
-            }
-        }
         return null;
-    }
-
-    @Override
-    public <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType) {
-        Assert.notNull(requiredType, "Required type must not be null");
-        return getBeanProvider(ResolvableType.forRawClass(requiredType));
-    }
-
-    @Override
-    public <T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType) {
-        return new BeanObjectProvider<T>() {
-            @Override
-            public T getObject() throws BeansException {
-                T resolved = resolveBean(requiredType, null, false);
-                if (resolved == null) {
-                    throw new NoSuchBeanDefinitionException(requiredType);
-                }
-                return resolved;
-            }
-            @Override
-            public T getObject(Object... args) throws BeansException {
-                T resolved = resolveBean(requiredType, args, false);
-                if (resolved == null) {
-                    throw new NoSuchBeanDefinitionException(requiredType);
-                }
-                return resolved;
-            }
-            @Override
-            @Nullable
-            public T getIfAvailable() throws BeansException {
-                return resolveBean(requiredType, null, false);
-            }
-            @Override
-            @Nullable
-            public T getIfUnique() throws BeansException {
-                return resolveBean(requiredType, null, true);
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public Stream<T> stream() {
-                return Arrays.stream(getBeanNamesForTypedStream(requiredType))
-                        .map(name -> (T) getBean(name))
-                        .filter(bean -> !(bean instanceof NullBean));
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public Stream<T> orderedStream() {
-                String[] beanNames = getBeanNamesForTypedStream(requiredType);
-                if (beanNames.length == 0) {
-                    return Stream.empty();
-                }
-                Map<String, T> matchingBeans = new LinkedHashMap<>(beanNames.length);
-                for (String beanName : beanNames) {
-                    Object beanInstance = getBean(beanName);
-                    if (!(beanInstance instanceof NullBean)) {
-                        matchingBeans.put(beanName, (T) beanInstance);
-                    }
-                }
-                Stream<T> stream = matchingBeans.values().stream();
-                return stream;
-            }
-        };
-    }
-
-    private interface BeanObjectProvider<T> extends ObjectProvider<T>, Serializable {
-    }
-
-
-    private String[] getBeanNamesForTypedStream(ResolvableType requiredType) {
-        return BeanFactoryUtils.beanNamesForTypeIncludingAncestors(this, requiredType);
     }
 
 
@@ -232,15 +149,42 @@ public abstract class DefaultListableBeanFactory
 
     private String[] doGetBeanNamesForType(ResolvableType type, boolean includeNonSingletons, boolean allowEagerInit) {
         List<String> result = new ArrayList<>();
-
+        // Check manually registered singletons too.
+        for (String beanName : getBeanDefinitionNames()) {
+            try {
+                Object beanInstance = getBean(beanName);
+                // In case of FactoryBean, match object created by FactoryBean.
+                if (beanInstance instanceof FactoryBean) {
+                    if ((includeNonSingletons || isSingleton(beanName)) && isTypeMatch(beanName, type)) {
+                        result.add(beanName);
+                        // Match found for this bean: do not match FactoryBean itself anymore.
+                        continue;
+                    }
+                    // In case of FactoryBean, try to match FactoryBean itself next.
+                    beanName = FACTORY_BEAN_PREFIX + beanName;
+                }
+                // Match raw bean instance (might be raw FactoryBean).
+                if (isTypeMatch(beanName, type)) {
+                    result.add(beanName);
+                }
+            }
+            catch (NoSuchBeanDefinitionException ex) {
+                // Shouldn't happen - probably a result of circular reference resolution...
+                if (logger.isTraceEnabled()) {
+                    logger.trace("Failed to check manually registered singleton with name '" + beanName + "'", ex);
+                }
+            }
+        }
 
         return StringUtils.toStringArray(result);
     }
 
     @Override
-    public BeanDefinition getBeanDefinitions(String beanName) {
+    public BeanDefinition getBeanDefinition(String beanName) {
         return this.beanDefinitionMap.get(beanName);
     }
+
+
 
     @Override
     public boolean containsBeanDefinition(String beanName) {
@@ -272,7 +216,48 @@ public abstract class DefaultListableBeanFactory
 
     @Override
     public String[] getBeanDefinitionNames() {
-        return new HashSet<>();
+        return beanDefinitionMap.keySet().toArray(new String[0]);
+    }
+
+    @Override
+    public boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException {
+        return false;
+    }
+
+    @Override
+    public int getBeanDefinitionCount() {
+        return beanDefinitionMap.size();
+    }
+
+    @Override
+    public <T> Map<String, T> getBeansOfType(@Nullable Class<T> type) throws BeansException {
+        return getBeansOfType(type, true, true);
+    }
+
+
+    @Override
+    public Map<String, Object> getBeansWithAnnotation(Class<? extends Annotation> annotationType) throws BeansException {
+        String[] beanNames = getBeanNamesForAnnotation(annotationType);
+        Map<String, Object> result = new LinkedHashMap<>(beanNames.length);
+        for (String beanName : beanNames) {
+            Object beanInstance = getBean(beanName);
+            if (!(beanInstance instanceof NullBean)) {
+                result.put(beanName, beanInstance);
+            }
+        }
+        return result;
+    }
+
+    @Nullable
+    @Override
+    public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
+
+        A ann = null;
+        Class<?> beanType = getType(beanName);
+        if (beanType != null) {
+            ann = AnnotationUtils.findAnnotation(beanType, annotationType);
+        }
+        return ann;
     }
 
     public boolean isConfigurationFrozen() {

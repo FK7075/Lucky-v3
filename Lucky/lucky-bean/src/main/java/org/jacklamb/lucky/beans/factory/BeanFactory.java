@@ -40,10 +40,6 @@ public interface BeanFactory extends BeanPostProcessorRegistry {
 
     <T> T getBean(Class<T> requiredType, Object... args) throws BeansException;
 
-    <T> ObjectProvider<T> getBeanProvider(Class<T> requiredType);
-
-    <T> ObjectProvider<T> getBeanProvider(ResolvableType requiredType);
-
     boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException;
 
     /**

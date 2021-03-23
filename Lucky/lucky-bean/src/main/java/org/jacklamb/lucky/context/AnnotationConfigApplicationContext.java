@@ -1,6 +1,9 @@
 package org.jacklamb.lucky.context;
 
 import com.lucky.utils.base.ArrayUtils;
+import com.lucky.utils.type.ResolvableType;
+import org.jacklamb.lucky.exception.BeansException;
+import org.jacklamb.lucky.exception.NoSuchBeanDefinitionException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -47,4 +50,13 @@ public class AnnotationConfigApplicationContext extends AbstractApplicationConte
 
     }
 
+    @Override
+    public <T> T getBean(Class<T> requiredType, Object... args) throws BeansException {
+        return beanFactory.getBean(requiredType, args);
+    }
+
+    @Override
+    public boolean isTypeMatch(String name, ResolvableType typeToMatch) throws NoSuchBeanDefinitionException {
+        return beanFactory.isTypeMatch(name,typeToMatch);
+    }
 }

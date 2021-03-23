@@ -49,7 +49,7 @@ public class CglibDynamicAopProxy implements AopProxy , MethodInterceptor {
         if(constructor!=null){
             return enhancer.create();
         } else {
-            BeanDefinition bd = ((DefaultBeanFactory)beanFactory).getBeanDefinitions(beanName);
+            BeanDefinition bd = ((DefaultBeanFactory)beanFactory).getBeanDefinition(beanName);
             return enhancer.create(bd.getConstructor().getParameterTypes(),bd.getConstructorArgumentRealValues());
         }
     }

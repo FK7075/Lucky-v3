@@ -32,7 +32,7 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
         if(sharedInstance != null){
             bean=sharedInstance;
         }else{
-            BeanDefinition definition = getBeanDefinitions(name);
+            BeanDefinition definition = getBeanDefinition(name);
             Assert.notNull(definition,"can not find the definition of bean '" + name + "'");
             bean = getSingleton(name,()->doCreateBean(name,definition));
         }
@@ -268,7 +268,7 @@ public class DefaultBeanFactory extends DefaultSingletonBeanRegistry {
     public void close() throws IOException {
         super.close();
         for (String singletonName : getSingletonNames()) {
-            BeanDefinition bd = getBeanDefinitions(singletonName);
+            BeanDefinition bd = getBeanDefinition(singletonName);
             if(Assert.isBlankString(bd.getDestroyMethodName())){
                 try {
                     Object instance = getSingleton(singletonName);

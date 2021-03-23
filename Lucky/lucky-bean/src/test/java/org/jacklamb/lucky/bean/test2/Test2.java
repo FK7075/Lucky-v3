@@ -22,7 +22,7 @@ public class Test2 {
 
     private static PreBuildBeanFactory pf=new PreBuildBeanFactory();
 
-    @Test
+//    @Test
     public void singleton() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         bd.setBeanClass(CBean.class);
@@ -35,7 +35,7 @@ public class Test2 {
         pf.registerBeanDefinition("p-b",bd);
     }
 
-    @Test
+//    @Test
     public void initCBean() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         Object[] args={1,"I'M CBean"};
@@ -45,7 +45,7 @@ public class Test2 {
         pf.registerBeanDefinition("c",bd);
     }
 
-    @Test
+//    @Test
     public void initBBean() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         BeanReference br=new BeanReference("c");
@@ -56,7 +56,7 @@ public class Test2 {
         pf.registerBeanDefinition("b",bd);
     }
 
-    @Test
+//    @Test
     public void factoryBBean() throws BeanDefinitionRegisterException {
         GenericBeanDefinition bd=new GenericBeanDefinition();
         bd.setBeanClass(MyBeanFactory.class);
@@ -112,7 +112,7 @@ public class Test2 {
 //        }
 
 //        BBean s_b = (BBean) pf.getBean("p-b");
-        BBean s_b = (BBean) pf.getBean("s-b");
+        BBean s_b =pf.getBean(BBean.class);
         System.out.println(s_b);
 
 //        BBean bean = pf.getBean("p-b",BBean.class);

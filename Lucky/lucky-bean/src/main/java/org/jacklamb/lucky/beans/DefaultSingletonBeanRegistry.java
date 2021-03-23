@@ -1,13 +1,20 @@
 package org.jacklamb.lucky.beans;
 
+import com.lucky.utils.annotation.Nullable;
 import com.lucky.utils.base.Assert;
+import com.lucky.utils.base.StringUtils;
 import org.jacklamb.lucky.beans.factory.DefaultListableBeanFactory;
+import org.jacklamb.lucky.beans.factory.NullBean;
 import org.jacklamb.lucky.beans.factory.ObjectFactory;
+import org.jacklamb.lucky.exception.BeanCreationException;
 import org.jacklamb.lucky.exception.BeanCreationNotAllowedException;
+import org.jacklamb.lucky.exception.BeanCurrentlyInCreationException;
+import org.jacklamb.lucky.exception.BeansException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -119,18 +126,11 @@ public abstract class DefaultSingletonBeanRegistry extends DefaultListableBeanFa
                 if (log.isDebugEnabled()){
                     log.debug("Creating shared instance of singleton bean '" + beanName + "'");
                 }
-                boolean isSingleton = getBeanDefinitions(beanName).isSingleton();
-//                if(isSingleton){
-//
-//                }
-//                this.singletonsCurrentlyInCreation.add(beanName);
                 singletonObject = singletonFactory.getObject();
-//
-                if(getBeanDefinitions(beanName).isSingleton()){
+                if(getBeanDefinition(beanName).isSingleton()){
                     addSingleton(beanName, singletonObject);
                 }
             }
-//            this.singletonsCurrentlyInCreation.remove(beanName);
             return singletonObject;
         }
     }
@@ -163,6 +163,54 @@ public abstract class DefaultSingletonBeanRegistry extends DefaultListableBeanFa
         singletonsCurrentlyInDestruction = true;
     }
 
+    @Override
+    public <T> Map<String, T> getBeansOfType(@Nullable Class<T> type, boolean includeNonSingletons, boolean allowEagerInit) throws BeansException {
+        String[] beanNames = getBeanNamesForType(type, includeNonSingletons, allowEagerInit);
+        Map<String, T> result = new LinkedHashMap<>(beanNames.length);
+        for (String beanName : beanNames) {
+            try {
+                Object beanInstance = getBean(beanName);
+                if (!(beanInstance instanceof NullBean)) {
+                    result.put(beanName, (T) beanInstance);
+                }
+            }
+            catch (BeanCreationException ex) {
+                Throwable rootCause = ex.getMostSpecificCause();
+                if (rootCause instanceof BeanCurrentlyInCreationException) {
+                    BeanCreationException bce = (BeanCreationException) rootCause;
+                    String exBeanName = bce.getBeanName();
+                    if (exBeanName != null && isSingletonCurrentlyInCreation(exBeanName)) {
+                        if (log.isTraceEnabled()) {
+                            log.trace("Ignoring match to currently created bean '" + exBeanName + "': " +
+                                    ex.getMessage());
+                        }
+                        // Ignore: indicates a circular reference when autowiring constructors.
+                        // We want to find matches other than the currently created bean itself.
+                        continue;
+                    }
+                }
+                throw ex;
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public String[] getBeanNamesForAnnotation(Class<? extends Annotation> annotationType) {
+        List<String> result = new ArrayList<>();
+        for (String beanName : this.getBeanDefinitionNames()) {
+            if (findAnnotationOnBean(beanName, annotationType) != null) {
+                result.add(beanName);
+            }
+        }
+        for (String beanName : this.getSingletonNames()) {
+            if (!result.contains(beanName) && findAnnotationOnBean(beanName, annotationType) != null) {
+                result.add(beanName);
+            }
+        }
+        return StringUtils.toStringArray(result);
+    }
+
     protected void clearSingletonCache() {
         synchronized (this.singletonObjects) {
             this.singletonObjects.clear();
@@ -172,4 +220,5 @@ public abstract class DefaultSingletonBeanRegistry extends DefaultListableBeanFa
             this.singletonsCurrentlyInDestruction = false;
         }
     }
+
 }
