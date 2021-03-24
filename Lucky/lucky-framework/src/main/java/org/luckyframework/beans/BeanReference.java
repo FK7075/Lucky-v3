@@ -1,5 +1,7 @@
 package org.luckyframework.beans;
 
+import org.luckyframework.beans.factory.BeanFactory;
+
 /**
  * 用来描述依赖
  * @author fk7075
@@ -45,5 +47,12 @@ public class BeanReference {
 
     public void setType(Class<?> type) {
         this.type = type;
+    }
+
+    public Class<?> getReferenceType(BeanFactory beanFactory){
+        if(autowire == Autowire.BY_TYPE){
+            return type;
+        }
+        return beanFactory.getType(beanName);
     }
 }

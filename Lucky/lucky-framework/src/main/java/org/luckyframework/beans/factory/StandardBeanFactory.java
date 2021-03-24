@@ -256,33 +256,35 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
         if(args == null){
             method=type.getMethod(factoryMethodName,null);
         }
-        else{
-            Class<?>[] paramTypes=new Class[args.length];
-            for (int i = 0 ,j =args.length; i < j; i++) {
-                paramTypes[i]=args[i].getClass();
+        else {
+            Class<?>[] paramTypes = new Class[args.length];
+            for (int i = 0, j = args.length; i < j; i++) {
+                paramTypes[i] = args[i].getClass();
             }
-
-            try {
-                method=type.getMethod(factoryMethodName,paramTypes);
-            }catch (Exception ignored){
-
-            }
-            if(method == null){
-                Method[] methods = type.getMethods();
-                out:for (Method m : methods) {
-                    Class<?>[] parameterTypes = m.getParameterTypes();
-                    if(parameterTypes.length == paramTypes.length){
-                        for (int i = 0 ,j= parameterTypes.length; i < j; i++) {
-                            if(!parameterTypes[i].isAssignableFrom(paramTypes[i])){
-                                continue out;
-                            }
-                        }
-                        method=m;
-                        break;
-                    }
-                }
-            }
+            method = getMethodByParamTypes(type, factoryMethodName, paramTypes);
         }
+//
+//            try {
+//                method=type.getMethod(factoryMethodName,paramTypes);
+//            }catch (Exception ignored){
+//
+//            }
+//            if(method == null){
+//                Method[] methods = type.getMethods();
+//                out:for (Method m : methods) {
+//                    Class<?>[] parameterTypes = m.getParameterTypes();
+//                    if(parameterTypes.length == paramTypes.length){
+//                        for (int i = 0 ,j= parameterTypes.length; i < j; i++) {
+//                            if(!parameterTypes[i].isAssignableFrom(paramTypes[i])){
+//                                continue out;
+//                            }
+//                        }
+//                        method=m;
+//                        break;
+//                    }
+//                }
+//            }
+//        }
         if(method != null){
             if(definition.isPrototype() && isGbd){
                 ((GenericBeanDefinition) definition).setCacheFactoryMethod(method);
@@ -292,6 +294,27 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
             throw new Exception("There is no corresponding method" + definition);
         }
 
+    }
+
+    private Method getMethodByParamTypes(Class<?> type,String methodName,Class<?>[] paramTypes){
+        try {
+            return type.getMethod(methodName,paramTypes);
+        }catch (Exception ignored){
+
+        }
+        Method[] methods = type.getMethods();
+        out:for (Method m : methods) {
+            Class<?>[] parameterTypes = m.getParameterTypes();
+            if(parameterTypes.length == paramTypes.length){
+                for (int i = 0 ,j= parameterTypes.length; i < j; i++) {
+                    if(!parameterTypes[i].isAssignableFrom(paramTypes[i])){
+                        continue out;
+                    }
+                }
+                return m;
+            }
+        }
+        return null;
     }
 
     //获取构造器的执行参数
@@ -399,7 +422,7 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
         int i=0;
         for (Object value : argumentValues) {
             if(value instanceof BeanReference){
-                types[i++] = getType(((BeanReference)value).getBeanName());
+                types[i++] = ((BeanReference)value).getReferenceType(this);
             }else{
                 types[i++] = value.getClass();
             }
