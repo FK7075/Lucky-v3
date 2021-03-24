@@ -10,9 +10,14 @@ import org.luckyframework.beans.factory.BeanFactory;
  */
 public class BeanReference {
 
+    /** 依赖ID*/
     private String beanName;
+    /** 注入方式*/
     private Autowire autowire;
+    /** 依赖类型*/
     private Class<?> type;
+    /** 是否为必须*/
+    private boolean required = true;
 
     public BeanReference(String beanName) {
         this.beanName = beanName;
@@ -23,6 +28,14 @@ public class BeanReference {
         this.beanName = beanName;
         this.type = type;
         autowire=Autowire.BY_TYPE;
+    }
+
+    public boolean isRequired() {
+        return required;
+    }
+
+    public void setRequired(boolean required) {
+        this.required = required;
     }
 
     public String getBeanName() {

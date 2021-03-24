@@ -12,6 +12,7 @@ public class PropertyValue {
     /** 属性值*/
     private Object value;
 
+
     public PropertyValue(String name, Object value) {
         this.name = name;
         this.value = value;
@@ -32,4 +33,5 @@ public class PropertyValue {
     public void setValue(Object value) {
         this.value = value;
     }
+
 }

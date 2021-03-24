@@ -46,7 +46,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         List<String> typeNames =new ArrayList<>();
         String[] definitionNames = getBeanDefinitionNames();
         for (String name : definitionNames) {
-            if(type.isAssignableFrom(getBean(name).getClass())){
+            if(isTypeMatch(name,type)){
                 typeNames.add(name);
             }
         }
@@ -62,7 +62,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         List<String> typeNames =new ArrayList<>();
         String[] definitionNames = getBeanDefinitionNames();
         for (String name : definitionNames) {
-            if(getBeanDefinition(name).isSingleton()&&type.isAssignableFrom(getBean(name).getClass())){
+            if(getBeanDefinition(name).isSingleton()&&isTypeMatch(name,type)){
                 typeNames.add(name);
             }
         }
@@ -74,7 +74,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         List<String> typeNames =new ArrayList<>();
         String[] definitionNames = getBeanDefinitionNames();
         for (String name : definitionNames) {
-            if(getBean(name).getClass().isAssignableFrom(annotationType)){
+            if(getType(name).isAssignableFrom(annotationType)){
                 typeNames.add(name);
             }
         }
@@ -113,7 +113,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         Map<String, Object> matchMap = new HashMap<>();
         String[] definitionNames = getBeanDefinitionNames();
         for (String name : definitionNames) {
-            if(getBean(name).getClass().isAssignableFrom(annotationType)){
+            if(getType(name).isAssignableFrom(annotationType)){
                 matchMap.put(name,getBean(name));
             }
         }
@@ -123,7 +123,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
     @Nullable
     @Override
     public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
-        return AnnotatedElementUtils.findMergedAnnotation(getBean(beanName).getClass(),annotationType);
+        return AnnotatedElementUtils.findMergedAnnotation(getType(beanName),annotationType);
     }
 
 }

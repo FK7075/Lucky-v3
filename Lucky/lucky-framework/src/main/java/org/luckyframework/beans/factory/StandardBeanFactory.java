@@ -263,28 +263,6 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
             }
             method = getMethodByParamTypes(type, factoryMethodName, paramTypes);
         }
-//
-//            try {
-//                method=type.getMethod(factoryMethodName,paramTypes);
-//            }catch (Exception ignored){
-//
-//            }
-//            if(method == null){
-//                Method[] methods = type.getMethods();
-//                out:for (Method m : methods) {
-//                    Class<?>[] parameterTypes = m.getParameterTypes();
-//                    if(parameterTypes.length == paramTypes.length){
-//                        for (int i = 0 ,j= parameterTypes.length; i < j; i++) {
-//                            if(!parameterTypes[i].isAssignableFrom(paramTypes[i])){
-//                                continue out;
-//                            }
-//                        }
-//                        method=m;
-//                        break;
-//                    }
-//                }
-//            }
-//        }
         if(method != null){
             if(definition.isPrototype() && isGbd){
                 ((GenericBeanDefinition) definition).setCacheFactoryMethod(method);
@@ -352,7 +330,10 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
                 }
 
                 if(forType.length == 0){
-                    throw new NoSuchBeanDefinitionException(beanReference.getType());
+                    if(beanReference.isRequired()){
+                        throw new NoSuchBeanDefinitionException(beanReference.getType());
+                    }
+                    return null;
                 }
                 if(ArrayUtils.containStr(forType,beanReference.getBeanName())){
                     return this.getBean(beanReference.getBeanName());
@@ -399,19 +380,32 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
     @Override
     public Class<?> getType(String name) throws BeansException {
         BeanDefinition definition = getBeanDefinition(name);
+        Assert.notNull(definition,"Cannot find the bean definition information with the name '"+definition+"'");
         Class<?> beanClass = definition.getBeanClass();
         String factoryBeanName = definition.getFactoryBeanName();
         String factoryMethodName = definition.getFactoryMethodName();
         if(beanClass != null){
+
+            //构造器
             if(Assert.isBlankString(factoryBeanName) && Assert.isBlankString(factoryMethodName)){
                 return beanClass;
             }
 
+            //静态工厂方法
             if(!Assert.isBlankString(factoryMethodName)){
-
+                Method method = getMethod(beanClass, factoryMethodName, definition.getConstructorArgumentValues());
+                //"There is no corresponding method"
+                Assert.notNull(method,"No static factory method matching the name '"+factoryMethodName+"' was found "+definition);
+                return method.getReturnType();
             }
         }
-        return getBean(name).getClass();
+
+        //工厂方法
+        Class<?> factoryBeanClass = getType(factoryBeanName);
+        Method method = getMethod(factoryBeanClass, factoryMethodName, definition.getConstructorArgumentValues());
+        //"There is no corresponding method"
+        Assert.notNull(method, "No factory method matching the name '"+factoryMethodName+"' was found "+definition);
+        return method.getReturnType();
     }
 
     private Method getMethod(Class<?> aClass,String factoryMethodName,Object[] argumentValues){
@@ -427,7 +421,7 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
                 types[i++] = value.getClass();
             }
         }
-        return null;
+        return getMethodByParamTypes(aClass,factoryMethodName,types);
     }
 
 
@@ -441,33 +435,27 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
     @SuppressWarnings("unchecked")
     public <T> T getBean(Class<T> requiredType) throws BeansException {
         List<String> matchNames = new ArrayList<>();
-        List<Object> matchObjects = new ArrayList<>();
-        List<Object> equalsObjects = new ArrayList<>();
+        List<String> equalsNames = new ArrayList<>();
         String[] names = getBeanDefinitionNames();
         for (String name : names) {
-            Object bean = getBean(name);
-            if(bean == null){
-                continue;
-            }
-            Class<?> beanClass = bean.getClass();
+            Class<?> beanClass = getType(name);
             if(beanClass.equals(requiredType)){
-                equalsObjects.add(bean);
+                equalsNames.add(name);
                 matchNames.add(name);
                 continue;
             }
-            if(requiredType.isAssignableFrom(bean.getClass())){
-                matchObjects.add(bean);
+            if(requiredType.isAssignableFrom(beanClass)){
                 matchNames.add(name);
             }
         }
-        if(equalsObjects.size() == 1){
-            return (T) equalsObjects.get(0);
+        if(equalsNames.size() == 1){
+            return (T) getBean(equalsNames.get(0));
         }
 
-        if(matchObjects.size() == 1){
-            return (T) matchObjects.get(0);
+        if(matchNames.size() == 1){
+            return (T) getBean(matchNames.get(0));
         }
-        if(equalsObjects.size()==0 && matchObjects.size()==0){
+        if(equalsNames.size()==0 && matchNames.size()==0){
             throw new NoSuchBeanDefinitionException(requiredType);
         }
         throw new NoUniqueBeanDefinitionException(ResolvableType.forType(requiredType),matchNames);
@@ -497,11 +485,7 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
 
     @Override
     public boolean isTypeMatch(String name, Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
-        Object bean = getBean(name);
-        if(bean == null){
-            throw new NoSuchBeanDefinitionException("No definition information found for bean name '"+name+"'");
-        }
-        return typeToMatch.isAssignableFrom(getBean(name).getClass());
+        return typeToMatch.isAssignableFrom(getType(name));
     }
 
     @Override

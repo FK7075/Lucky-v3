@@ -1,16 +1,21 @@
-package org.luckyframework.context.annotation;
+package org.luckyframework.context;
 
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.base.BaseUtils;
+import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
-import org.luckyframework.beans.BeanDefinition;
-import org.luckyframework.beans.BeanScope;
-import org.luckyframework.beans.GenericBeanDefinition;
-import org.luckyframework.beans.PropertyValue;
+import org.luckyframework.beans.*;
 import org.luckyframework.context.BeanDefinitionReader;
+import org.luckyframework.context.annotation.Autowired;
+import org.luckyframework.context.annotation.Component;
+import org.luckyframework.context.annotation.Lazy;
+import org.luckyframework.context.annotation.Scope;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -73,7 +78,16 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
     }
 
     protected PropertyValue[] getPropertyValues(){
-        return null;
+        List<PropertyValue> propertyValues = new ArrayList<>();
+        List<Field> autowiredFiles = ClassUtils.getFieldByStrengthenAnnotation(componentClass, Autowired.class);
+        for (Field autowiredFile : autowiredFiles) {
+            String fileName = autowiredFile.getName();
+            BeanReference br = new BeanReference(fileName,autowiredFile.getType());
+            br.setRequired(AnnotatedElementUtils.findMergedAnnotation(autowiredFile,Autowired.class).required());
+            PropertyValue pv = new PropertyValue(fileName,br);
+            propertyValues.add(pv);
+        }
+        return propertyValues.toArray(new PropertyValue[]{});
     }
 
     protected boolean isLazyInit(){

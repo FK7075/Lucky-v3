@@ -71,7 +71,7 @@ public interface BeanDefinition extends Cloneable {
     default boolean validate(){
         boolean classIsNull = Assert.isNull(getBeanClass());
         boolean factoryNameIsNull = Assert.isBlankString(getFactoryBeanName());
-        boolean factoryMethodIsNull = Assert.isBlankString(getDestroyMethodName());
+        boolean factoryMethodIsNull = Assert.isBlankString(getFactoryMethodName());
 
         if(classIsNull){
             //没有定义class，工厂方法或者工厂bean没有指定 --> 不合法
