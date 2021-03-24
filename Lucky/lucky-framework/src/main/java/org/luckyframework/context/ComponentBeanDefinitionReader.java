@@ -26,8 +26,8 @@ import java.util.Map;
 public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
 
 
-    private final Class<?> componentClass;
-    private final Component component;
+    protected final Class<?> componentClass;
+    protected final Component component;
 
     public ComponentBeanDefinitionReader(Class<?> componentClass){
         Assert.notNull(componentClass,"class is null");
@@ -37,12 +37,6 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
         this.componentClass=componentClass;
     }
 
-    @Override
-    public Map<String, BeanDefinition> getBeanDefinitions() {
-        Map<String, BeanDefinition> beanDefinitionMap = new HashMap<>(1);
-        beanDefinitionMap.put(getThisBeanName(),getThisBeanDefinition());
-        return beanDefinitionMap;
-    }
 
     protected String getThisBeanName(){
         return Assert.isBlankString(component.value())
@@ -100,4 +94,8 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
         return scope == null ? BeanScope.SINGLETON : scope.value();
     }
 
+    @Override
+    public BeanDefinitionPojo getBeanDefinition() {
+        return new BeanDefinitionPojo(getThisBeanName(),getThisBeanDefinition());
+    }
 }

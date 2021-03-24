@@ -15,19 +15,34 @@ import java.util.Map;
 public interface BeanDefinitionReader {
 
     /**
-     * 获取所有解析得到的BeanDefinition
+     * 获取解析得到的BeanDefinition
      */
-    Map<String, BeanDefinition> getBeanDefinitions();
+    BeanDefinitionPojo getBeanDefinition();
 
-    default boolean containsBeanDefinitionName(String name){
-        return false;
-    }
 
-    default void check(String name,BeanDefinition beanDefinition) {
-        Assert.notNull(name,"BeanDefinition name is null");
-        Assert.notNull(beanDefinition,"BeanDefinition is null");
-        if(containsBeanDefinitionName(name)){
-            throw new BeanDefinitionRegisterException("The bean definition information named '"+name+"' already exists");
+    class BeanDefinitionPojo{
+        private String beanName;
+        private BeanDefinition definition;
+
+        public BeanDefinitionPojo(String beanName, BeanDefinition definition) {
+            this.beanName = beanName;
+            this.definition = definition;
+        }
+
+        public String getBeanName() {
+            return beanName;
+        }
+
+        public void setBeanName(String beanName) {
+            this.beanName = beanName;
+        }
+
+        public BeanDefinition getDefinition() {
+            return definition;
+        }
+
+        public void setDefinition(BeanDefinition definition) {
+            this.definition = definition;
         }
     }
 }

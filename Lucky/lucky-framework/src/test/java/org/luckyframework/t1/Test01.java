@@ -4,7 +4,9 @@ import org.junit.Test;
 import org.luckyframework.beans.*;
 import org.luckyframework.beans.factory.DefaultListableBeanFactory;
 import org.luckyframework.beans.factory.StandardBeanFactory;
+import org.luckyframework.context.BeanDefinitionReader;
 import org.luckyframework.context.ComponentBeanDefinitionReader;
+import org.luckyframework.context.ConfigurationBeanDefinitionReader;
 import org.luckyframework.context.annotation.Component;
 import org.luckyframework.exception.BeanDefinitionRegisterException;
 
@@ -79,12 +81,10 @@ public class Test01 {
 
     @Test
     public void test3(){
-        ComponentBeanDefinitionReader cr = new ComponentBeanDefinitionReader(CBean.class);
-        Map<String, BeanDefinition> beanDefinitions = cr.getBeanDefinitions();
+        ConfigurationBeanDefinitionReader cr = new ConfigurationBeanDefinitionReader(CBean.class);
         DefaultListableBeanFactory sf =new DefaultListableBeanFactory();
-        for (Map.Entry<String,BeanDefinition> entry : beanDefinitions.entrySet()){
-            sf.registerBeanDefinition(entry.getKey(),entry.getValue());
-        }
+        BeanDefinitionReader.BeanDefinitionPojo definitionPojo = cr.getBeanDefinition();
+        sf.registerBeanDefinition(definitionPojo.getBeanName(),definitionPojo.getDefinition());
         sf.singletonBeanInitialization();
         System.out.println(Arrays.toString(sf.getSingletonBeanNames()));
 
