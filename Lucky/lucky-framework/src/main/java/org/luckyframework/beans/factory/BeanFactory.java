@@ -1,6 +1,7 @@
 package org.luckyframework.beans.factory;
 
 import com.lucky.utils.base.Assert;
+import org.luckyframework.beans.Autowire;
 import org.luckyframework.beans.BeanReference;
 import org.luckyframework.exception.BeansException;
 import org.luckyframework.exception.NoSuchBeanDefinitionException;
@@ -100,54 +101,5 @@ public interface BeanFactory {
      * @throws NoSuchBeanDefinitionException
      */
     boolean isPrototype(String name) throws NoSuchBeanDefinitionException;
-
-
-    //获取构造器参数的真实值，将引用值替换为真实值
-    default Object[] getRealValues(Object[] refArgumentValues) throws BeansException {
-        //空值
-        if(Assert.isEmptyArray(refArgumentValues)){
-            return null;
-        }
-        Object[] values=new Object[refArgumentValues.length];
-        int index=0;
-        for (Object ref : refArgumentValues) {
-            values[index++]=getRealValue(ref);
-        }
-        return values;
-    }
-
-
-
-    //将引用值转化为真实值
-    default Object getRealValue(Object ref) throws BeansException {
-        if(ref==null){
-            return null;
-        }else if(ref instanceof BeanReference){
-            return this.getBean(((BeanReference)ref).getBeanName());
-        }else if (ref instanceof Object[]) {
-            Object[] refArray= (Object[]) ref;
-            Object[] targetArray=new Object[refArray.length];
-            int i=0;
-            for (Object element : refArray) {
-                targetArray[i++]=getRealValue(element);
-            }
-            return targetArray;
-
-        } else if (ref instanceof Collection) {
-            Collection<?> refCollection = (Collection<?>) ref;
-            for (Object element : refCollection) {
-                getRealValue(element);
-            }
-            return refCollection;
-        } else if (ref instanceof Properties) {
-            //TODO
-            return ref;
-        } else if (ref instanceof Map) {
-            //TODO
-            return ref;
-        } else {
-            return ref;
-        }
-    }
 
 }

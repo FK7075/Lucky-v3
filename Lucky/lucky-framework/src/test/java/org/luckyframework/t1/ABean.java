@@ -1,14 +1,21 @@
 package org.luckyframework.t1;
 
+import org.luckyframework.context.annotation.Component;
+import org.luckyframework.context.annotation.Service;
+
 /**
  * @author fk
  * @version 1.0
  * @date 2021/3/23 0023 14:08
  */
+
+@Service("ABean")
 public class ABean {
 
     private Integer id;
     private BBean b;
+
+    public ABean(){}
 
     private String name;
 

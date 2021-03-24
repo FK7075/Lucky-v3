@@ -5,7 +5,7 @@ package org.luckyframework.exception;
  * @version 1.0
  * @date 2021/3/12 0012 18:29
  */
-public class BeanDefinitionRegisterException extends Exception{
+public class BeanDefinitionRegisterException extends RuntimeException{
 
     public BeanDefinitionRegisterException(String mess) {
         super(mess);

@@ -8,7 +8,7 @@ import com.lucky.utils.base.Assert;
  * @version 1.0.0
  * @date 2021/3/21 下午11:06
  */
-public interface BeanDefinition {
+public interface BeanDefinition extends Cloneable {
 
     /** 获取当前的BeanClass */
     Class<?> getBeanClass();
@@ -64,6 +64,10 @@ public interface BeanDefinition {
     /** 是否为原型 */
     boolean isPrototype();
 
+    /** 复制*/
+    BeanDefinition copy();
+
+
     default boolean validate(){
         boolean classIsNull = Assert.isNull(getBeanClass());
         boolean factoryNameIsNull = Assert.isBlankString(getFactoryBeanName());
@@ -82,5 +86,4 @@ public interface BeanDefinition {
         }
         return true;
     }
-
 }

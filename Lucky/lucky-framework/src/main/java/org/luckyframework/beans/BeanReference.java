@@ -9,9 +9,18 @@ package org.luckyframework.beans;
 public class BeanReference {
 
     private String beanName;
+    private Autowire autowire;
+    private Class<?> type;
 
     public BeanReference(String beanName) {
         this.beanName = beanName;
+        autowire=Autowire.BY_NAME;
+    }
+
+    public BeanReference(String beanName,Class<?> type) {
+        this.beanName = beanName;
+        this.type = type;
+        autowire=Autowire.BY_TYPE;
     }
 
     public String getBeanName() {
@@ -20,5 +29,21 @@ public class BeanReference {
 
     public void setBeanName(String beanName) {
         this.beanName = beanName;
+    }
+
+    public Autowire getAutowire() {
+        return autowire;
+    }
+
+    public void setAutowire(Autowire autowire) {
+        this.autowire = autowire;
+    }
+
+    public Class<?> getType() {
+        return type;
+    }
+
+    public void setType(Class<?> type) {
+        this.type = type;
     }
 }

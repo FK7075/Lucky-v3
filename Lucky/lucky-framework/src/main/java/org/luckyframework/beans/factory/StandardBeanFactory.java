@@ -1,16 +1,13 @@
 package org.luckyframework.beans.factory;
 
+import com.lucky.utils.base.ArrayUtils;
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.reflect.FieldUtils;
-import org.luckyframework.beans.BeanDefinition;
-import org.luckyframework.beans.DefaultBeanDefinitionRegister;
-import org.luckyframework.beans.GenericBeanDefinition;
-import org.luckyframework.beans.PropertyValue;
-import org.luckyframework.exception.BeanCreationException;
-import org.luckyframework.exception.BeanCurrentlyInCreationException;
-import org.luckyframework.exception.BeansException;
-import org.luckyframework.exception.NoSuchBeanDefinitionException;
+import com.lucky.utils.reflect.MethodUtils;
+import com.lucky.utils.type.ResolvableType;
+import org.luckyframework.beans.*;
+import org.luckyframework.exception.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -24,8 +21,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0
  * @date 2021/3/23 0023 9:59
  */
-public class StandardBeanFactory extends DefaultBeanDefinitionRegister implements BeanFactory {
+public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister implements ListableBeanFactory, BeanPostProcessorRegistry {
 
+    private final List<BeanPostProcessor> beanPostProcessors =new ArrayList<>(20);
     //单例池
     private final Map<String,Object> singletonObjects = new ConcurrentHashMap<>(256);
     //实例化但未初始化的早期对象
@@ -46,18 +44,39 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
     private Object doCreateBean(String name, BeanDefinition definition) {
         Object instance = earlySingletonObjects.get(name);
         if(instance != null){
+            if(instance instanceof FactoryBean){
+                try {
+                    return ((FactoryBean<?>)instance).getObject();
+                } catch (Exception e) {
+                    throw new BeanCreationException(name,"An exception occurred when creating an object through the factory bean",e);
+                }
+            }
             return instance;
         }
         instance = createBeanInstance(name,definition);
         populateBean(definition,instance);
+        instance=applyPostProcessBeforeInitialization(name,instance);
         doInit(definition,instance);
+        instance=applyPostProcessAfterInitialization(name,instance);
         inCreationCheckExclusions.remove(name);
+        finalTreatment(name,definition,instance);
+        return instance;
+    }
+
+    //最后的处理
+    private void finalTreatment(String name, BeanDefinition definition, Object instance) {
+        if(instance instanceof FactoryBean){
+            FactoryBean<?> factoryBean = (FactoryBean<?>) instance;
+            if(factoryBean.isSingleton()){
+                singletonObjects.put(name,instance);
+                earlySingletonObjects.remove(name);
+            }
+            return;
+        }
         if(definition.isSingleton()){
             singletonObjects.put(name,instance);
             earlySingletonObjects.remove(name);
         }
-
-        return instance;
     }
 
     // 设置属性依赖值
@@ -87,6 +106,7 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
         }
     }
 
+    //创建bean的实例
     private Object createBeanInstance(String name,BeanDefinition beanDefinition){
         // 检测循环依赖
         if(inCreationCheckExclusions.contains(name)){
@@ -220,7 +240,6 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
 
     }
 
-
     // 根据参数值确定使用的工厂方法(type 为工厂方法所在的类，type为null时使用BeanDefinition中配置的beanCLass)
     private Method determineFactoryMethod(BeanDefinition definition,Object[] args,Class<?> type)
             throws Exception {
@@ -280,6 +299,70 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
         return getRealValues(beanDefinition.getConstructorArgumentValues());
     }
 
+    //获取构造器参数的真实值，将引用值替换为真实值
+    protected Object[] getRealValues(Object[] refArgumentValues) throws BeansException {
+        //空值
+        if(Assert.isEmptyArray(refArgumentValues)){
+            return null;
+        }
+        Object[] values=new Object[refArgumentValues.length];
+        int index=0;
+        for (Object ref : refArgumentValues) {
+            values[index++]=getRealValue(ref);
+        }
+        return values;
+    }
+
+    //将引用值转化为真实值
+    protected Object getRealValue(Object ref) throws BeansException {
+        if(ref==null){
+            return null;
+        }else if(ref instanceof BeanReference){
+            BeanReference  beanReference = (BeanReference) ref;
+            if(beanReference.getAutowire() == Autowire.BY_NAME){
+                return this.getBean(beanReference.getBeanName());
+            }
+            if(beanReference.getAutowire() == Autowire.BY_TYPE){
+                String[] forType = getBeanNamesForType(beanReference.getType());
+                if(forType.length == 1){
+                    return getBean(forType[0]);
+                }
+
+                if(forType.length == 0){
+                    throw new NoSuchBeanDefinitionException(beanReference.getType());
+                }
+                if(ArrayUtils.containStr(forType,beanReference.getBeanName())){
+                    return this.getBean(beanReference.getBeanName());
+                }
+                throw new NoUniqueBeanDefinitionException(ResolvableType.forType(beanReference.getType()),forType);
+            }
+            return this.getBean(((BeanReference)ref).getBeanName());
+        }else if (ref instanceof Object[]) {
+            Object[] refArray= (Object[]) ref;
+            Object[] targetArray=new Object[refArray.length];
+            int i=0;
+            for (Object element : refArray) {
+                targetArray[i++]=getRealValue(element);
+            }
+            return targetArray;
+
+        } else if (ref instanceof Collection) {
+            Collection<?> refCollection = (Collection<?>) ref;
+            for (Object element : refCollection) {
+                getRealValue(element);
+            }
+            return refCollection;
+        } else if (ref instanceof Properties) {
+            //TODO
+            return ref;
+        } else if (ref instanceof Map) {
+            //TODO
+            return ref;
+        } else {
+            return ref;
+        }
+    }
+
     //---------------------------------------------------------------------
     // BeanFactory methods
     //---------------------------------------------------------------------
@@ -292,7 +375,36 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
 
     @Override
     public Class<?> getType(String name) throws BeansException {
+        BeanDefinition definition = getBeanDefinition(name);
+        Class<?> beanClass = definition.getBeanClass();
+        String factoryBeanName = definition.getFactoryBeanName();
+        String factoryMethodName = definition.getFactoryMethodName();
+        if(beanClass != null){
+            if(Assert.isBlankString(factoryBeanName) && Assert.isBlankString(factoryMethodName)){
+                return beanClass;
+            }
+
+            if(!Assert.isBlankString(factoryMethodName)){
+
+            }
+        }
         return getBean(name).getClass();
+    }
+
+    private Method getMethod(Class<?> aClass,String factoryMethodName,Object[] argumentValues){
+        if(Assert.isEmptyArray(argumentValues)){
+            return MethodUtils.getMethod(aClass,factoryMethodName);
+        }
+        Class<?>[] types = new Class<?>[argumentValues.length];
+        int i=0;
+        for (Object value : argumentValues) {
+            if(value instanceof BeanReference){
+                types[i++] = getType(((BeanReference)value).getBeanName());
+            }else{
+                types[i++] = value.getClass();
+            }
+        }
+        return null;
     }
 
 
@@ -335,19 +447,24 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
         if(equalsObjects.size()==0 && matchObjects.size()==0){
             throw new NoSuchBeanDefinitionException(requiredType);
         }
-        throw new NoSuchBeanDefinitionException("There are multiple beans matching the type '"+requiredType+"' "+matchNames);
+        throw new NoUniqueBeanDefinitionException(ResolvableType.forType(requiredType),matchNames);
     }
 
     @Override
     public Object getBean(String name, Object... args) throws BeansException {
+        Object bean = singletonObjects.get(name);
+        if(bean != null){
+            return bean;
+        }
         BeanDefinition definition = getBeanDefinition(name);
         if(definition == null){
             throw new NoSuchBeanDefinitionException("No definition information found for bean name '"+name+"'");
         }
-        if(definition instanceof GenericBeanDefinition){
-            ((GenericBeanDefinition)definition).setConstructorArgumentValues(args);
+        BeanDefinition copy = definition.copy();
+        if(copy instanceof GenericBeanDefinition){
+            ((GenericBeanDefinition)copy).setConstructorArgumentValues(args);
         }
-        return doCreateBean(name,definition);
+        return doCreateBean(name,copy);
     }
 
     @Override
@@ -378,4 +495,42 @@ public class StandardBeanFactory extends DefaultBeanDefinitionRegister implement
     public boolean isPrototype(String name) throws NoSuchBeanDefinitionException {
         return getBeanDefinition(name).isPrototype();
     }
+
+
+
+    //---------------------------------------------------------------------
+    // BeanPostProcessorRegistry methods
+    //---------------------------------------------------------------------
+
+    @Override
+    public void registerBeanPostProcessor(BeanPostProcessor processor) {
+        beanPostProcessors.add(processor);
+    }
+
+    @Override
+    public List<BeanPostProcessor> getBeanPostProcessors() {
+        return beanPostProcessors;
+    }
+
+    private Object applyPostProcessBeforeInitialization(String beanName,Object bean){
+        for (BeanPostProcessor processor : getBeanPostProcessors()) {
+            bean = processor.postProcessBeforeInitialization(bean, beanName);
+            if(bean == null){
+                return null;
+            }
+        }
+        return bean;
+    }
+
+    private Object applyPostProcessAfterInitialization(String beanName,Object bean){
+        for (BeanPostProcessor processor : getBeanPostProcessors()) {
+            bean = processor.postProcessAfterInitialization(bean, beanName);
+            if(bean == null){
+                return null;
+            }
+        }
+        return bean;
+    }
+
+
 }

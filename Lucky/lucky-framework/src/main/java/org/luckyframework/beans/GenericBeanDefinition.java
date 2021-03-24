@@ -24,6 +24,13 @@ public class GenericBeanDefinition implements BeanDefinition {
     private Object[] cacheConstructorArgumentRealValues;
     private PropertyValue[] cachePropertyRealValue;
 
+    public GenericBeanDefinition() {
+    }
+
+    public GenericBeanDefinition(Class<?> beanClass) {
+        this.beanClass = beanClass;
+    }
+
     public Constructor<?> getCacheConstructor() {
         return cacheConstructor;
     }
@@ -140,4 +147,17 @@ public class GenericBeanDefinition implements BeanDefinition {
         return BeanScope.PROTOTYPE == this.beanScope;
     }
 
+    @Override
+    public BeanDefinition copy() {
+        try {
+            return (BeanDefinition) clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return super.clone();
+    }
 }
