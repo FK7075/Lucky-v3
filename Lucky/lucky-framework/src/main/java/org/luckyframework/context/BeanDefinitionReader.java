@@ -1,10 +1,6 @@
 package org.luckyframework.context;
 
-import com.lucky.utils.base.Assert;
 import org.luckyframework.beans.BeanDefinition;
-import org.luckyframework.exception.BeanDefinitionRegisterException;
-
-import java.util.Map;
 
 /**
  * BeanDefinition的读取器

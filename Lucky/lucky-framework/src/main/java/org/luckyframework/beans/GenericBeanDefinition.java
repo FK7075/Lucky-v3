@@ -15,7 +15,7 @@ public class GenericBeanDefinition implements BeanDefinition {
     private String factoryMethodName;
     private BeanScope beanScope = BeanScope.SINGLETON;
     private boolean lazyInit = false;
-    private Object[] constructorArgumentValues;
+    private ConstructorValue[] constructorValues;
     private PropertyValue[] propertyValues;
     private String initMethodName;
     private String destroyMethodName;
@@ -107,12 +107,12 @@ public class GenericBeanDefinition implements BeanDefinition {
         this.lazyInit=lazyInit;
     }
 
-    public Object[] getConstructorArgumentValues() {
-        return this.constructorArgumentValues;
+    public ConstructorValue[] getConstructorValues() {
+        return this.constructorValues;
     }
 
-    public void setConstructorArgumentValues(Object[] constructorArgumentValues) {
-        this.constructorArgumentValues = constructorArgumentValues;
+    public void setConstructorValues(ConstructorValue[] constructorValues) {
+        this.constructorValues = constructorValues;
     }
 
     public PropertyValue[] getPropertyValues() {

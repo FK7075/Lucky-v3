@@ -5,18 +5,13 @@ import com.lucky.utils.base.BaseUtils;
 import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.*;
-import org.luckyframework.context.BeanDefinitionReader;
-import org.luckyframework.context.annotation.Autowired;
-import org.luckyframework.context.annotation.Component;
-import org.luckyframework.context.annotation.Lazy;
-import org.luckyframework.context.annotation.Scope;
+import org.luckyframework.context.annotation.*;
+import org.luckyframework.exception.BeanCreationException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Parameter;
+import java.util.*;
 
 /**
  * @author fk
@@ -49,39 +44,105 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
         beanDefinition.setPropertyValues(getPropertyValues());
         beanDefinition.setBeanScope(getScope());
         beanDefinition.setLazyInit(isLazyInit());
-        beanDefinition.setConstructorArgumentValues(getConstructorArgumentValues());
+        beanDefinition.setConstructorValues(getConstructorValues());
         return beanDefinition;
     }
 
-    protected Object[] getConstructorArgumentValues(){
+    protected ConstructorValue[] getConstructorValues(){
         Constructor<?>[] constructors = componentClass.getConstructors();
-        return null;
+        Constructor<?> constructor;
+        //只有一个构造器是默认使用这个唯一的构造器
+        if(constructors.length == 1){
+            constructor=constructors[0];
+        } else{
+            List<Constructor<?>> autowiredConstructors = new ArrayList<>();
+            for (Constructor<?> cons : constructors) {
+                if(cons.isAnnotationPresent(Autowired.class)){
+                    autowiredConstructors.add(cons);
+                }
+            }
 
+            if(autowiredConstructors.isEmpty()){
+                throw new BeanCreationException(getThisBeanName(),"In the process of creating the bean, multiple constructors were found, but no constructor annotated by '@Autowired' was found, so Lucky doesn't know which one to use?");
+            }
+
+            if(autowiredConstructors.size()!=1){
+                throw new BeanCreationException(getThisBeanName(),"Multiple constructors annotated by '@Autowired' were found during the bean creation process, so Lucky didn't know which one to use?");
+            }
+            constructor = autowiredConstructors.get(0);
+        }
+
+        return getValuesByConstructor(constructor);
     }
 
-    private Object[]getArgumentValuesByConstructor(Constructor<?> constructor){
-        Class<?>[] constructorParameterTypes = constructor.getParameterTypes();
-        if(Assert.isEmptyArray(constructorParameterTypes)){
+    private ConstructorValue[] getValuesByConstructor(Constructor<?> constructor){
+        Parameter[] parameters = constructor.getParameters();
+        //无参构造
+        if(parameters.length == 0){
             return null;
         }
-        Object[] values = new Object[constructorParameterTypes.length];
-        for (Class<?> type : constructorParameterTypes) {
+        ConstructorValue[] values = new ConstructorValue[parameters.length];
+        int i=0;
+        BeanReference beanReference;
+        for (Parameter parameter : parameters) {
+            Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(parameter, Qualifier.class);
+            Autowired autowired = AnnotatedElementUtils.findMergedAnnotation(parameter, Autowired.class);
+            if(qualifier != null){
+                String beanName = Assert.isBlankString(qualifier.value())?parameter.getName():qualifier.value();
+                beanReference = new BeanReference(beanName);
+                boolean required = autowired == null || autowired.required();
+                beanReference.setRequired(required);
+                values[i++] = new ConstructorValue(beanReference);
+                continue;
+            }
 
+            if(autowired != null){
+                beanReference = new BeanReference(parameter.getName(),parameter.getType());
+                beanReference.setRequired(autowired.required());
+                values[i++] = new ConstructorValue(beanReference);
+                continue;
+            }
+            values[i++] = new ConstructorValue(parameter.getType(),null);
         }
         return values;
     }
 
     protected PropertyValue[] getPropertyValues(){
         List<PropertyValue> propertyValues = new ArrayList<>();
-        List<Field> autowiredFiles = ClassUtils.getFieldByStrengthenAnnotation(componentClass, Autowired.class);
-        for (Field autowiredFile : autowiredFiles) {
-            String fileName = autowiredFile.getName();
-            BeanReference br = new BeanReference(fileName,autowiredFile.getType());
-            br.setRequired(AnnotatedElementUtils.findMergedAnnotation(autowiredFile,Autowired.class).required());
-            PropertyValue pv = new PropertyValue(fileName,br);
-            propertyValues.add(pv);
-        }
+        List<Field> autowiredFields = ClassUtils.getFieldByStrengthenAnnotation(componentClass, Autowired.class);
+        List<Field> qualifierFields = ClassUtils.getFieldByStrengthenAnnotation(componentClass, Qualifier.class);
+        autowiredFields.removeAll(qualifierFields);
+        propertyValues.addAll(getPropertyValuesByQualifierField(qualifierFields));
+        propertyValues.addAll(getPropertyValuesByAutowiredField(autowiredFields));
         return propertyValues.toArray(new PropertyValue[]{});
+    }
+
+    private List<PropertyValue> getPropertyValuesByAutowiredField(Collection<Field> autowiredFields){
+        List<PropertyValue> autowiredValues = new ArrayList<>();
+        for (Field autowiredField : autowiredFields) {
+            String fileName = autowiredField.getName();
+            BeanReference br = new BeanReference(fileName,autowiredField.getType());
+            br.setRequired(AnnotatedElementUtils.findMergedAnnotation(autowiredField,Autowired.class).required());
+            PropertyValue pv = new PropertyValue(fileName,br);
+            autowiredValues.add(pv);
+        }
+        return autowiredValues;
+    }
+
+    private List<PropertyValue> getPropertyValuesByQualifierField(Collection<Field> qualifierFields){
+        List<PropertyValue> qualifierValues = new ArrayList<>();
+        for (Field qualifierField : qualifierFields) {
+            String fileName = qualifierField.getName();
+            Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(qualifierField, Qualifier.class);
+            Autowired autowired = AnnotatedElementUtils.findMergedAnnotation(qualifierField, Autowired.class);
+            String beanName = Assert.isBlankString(qualifier.value())?qualifierField.getName():qualifier.value();
+            boolean required = autowired == null || autowired.required();
+            BeanReference br = new BeanReference(beanName);
+            br.setRequired(required);
+            PropertyValue pv = new PropertyValue(fileName,br);
+            qualifierValues.add(pv);
+        }
+        return qualifierValues;
     }
 
     protected boolean isLazyInit(){

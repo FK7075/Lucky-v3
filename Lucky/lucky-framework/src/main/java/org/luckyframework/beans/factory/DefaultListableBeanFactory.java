@@ -2,6 +2,7 @@ package org.luckyframework.beans.factory;
 
 import com.lucky.utils.annotation.Nullable;
 import com.lucky.utils.base.Assert;
+import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.BeanDefinition;
 import org.luckyframework.exception.BeansException;
@@ -74,7 +75,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         List<String> typeNames =new ArrayList<>();
         String[] definitionNames = getBeanDefinitionNames();
         for (String name : definitionNames) {
-            if(getType(name).isAssignableFrom(annotationType)){
+            if(AnnotationUtils.strengthenIsExist(getType(name),annotationType)){
                 typeNames.add(name);
             }
         }

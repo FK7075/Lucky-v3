@@ -40,8 +40,9 @@ public interface BeanDefinition extends Cloneable {
     /** 设置是否延迟初始化 */
     void setLazyInit(boolean lazyInit);
 
-    /** 构造器参数 */
-    Object[] getConstructorArgumentValues();
+    /** 构造器参数
+     * @return*/
+    ConstructorValue[] getConstructorValues();
 
     /** 属性设置参数 */
     PropertyValue[] getPropertyValues();

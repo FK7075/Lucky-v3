@@ -1,7 +1,13 @@
 package org.luckyframework.t1;
 
+import org.luckyframework.beans.BeanScope;
+import org.luckyframework.context.annotation.Autowired;
 import org.luckyframework.context.annotation.Component;
+import org.luckyframework.context.annotation.Scope;
 import org.luckyframework.context.annotation.Service;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Parameter;
 
 /**
  * @author fk
@@ -9,7 +15,8 @@ import org.luckyframework.context.annotation.Service;
  * @date 2021/3/23 0023 14:08
  */
 
-@Service("ABean")
+@Service
+@Scope(BeanScope.PROTOTYPE)
 public class ABean {
 
     private Integer id;
@@ -19,6 +26,7 @@ public class ABean {
 
     private String name;
 
+    @Autowired
     public ABean(String name) {
         this.name = name;
     }
@@ -55,5 +63,16 @@ public class ABean {
         sb.append(", name='").append(name).append('\'');
         sb.append('}');
         return sb.toString();
+    }
+
+    public static void main(String[] args) {
+        Constructor<?>[] constructors = ABean.class.getConstructors();
+        for (Constructor<?> constructor : constructors) {
+            Parameter[] parameters = constructor.getParameters();
+            for (Parameter parameter : parameters) {
+                System.out.println(parameter.getName());
+            }
+
+        }
     }
 }
