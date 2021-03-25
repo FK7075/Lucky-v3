@@ -3,8 +3,11 @@ package org.luckyframework.t1;
 import com.lucky.utils.fileload.Resource;
 import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver;
 import org.junit.Test;
+import org.luckyframework.AppTest;
 import org.luckyframework.beans.*;
 import org.luckyframework.beans.factory.DefaultListableBeanFactory;
+import org.luckyframework.context.AnnotationPackageScannerApplicationContext;
+import org.luckyframework.context.ApplicationContext;
 import org.luckyframework.context.ComponentBeanDefinitionReader;
 import org.luckyframework.context.ConfigurationBeanDefinitionReader;
 import org.luckyframework.context.annotation.Component;
@@ -13,6 +16,7 @@ import org.luckyframework.environment.Environment;
 import org.luckyframework.exception.BeanDefinitionRegisterException;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
@@ -23,6 +27,14 @@ import java.util.Properties;
  * @date 2021/3/23 0023 14:11
  */
 public class Test01 {
+
+    public void initMethod(){
+        System.out.println("Test01 Init ...");
+    }
+
+    public void destroyMethod(){
+        System.out.println("Test01 Destroy ...");
+    }
 
     @Test
     public void test1() throws BeanDefinitionRegisterException {
@@ -81,25 +93,6 @@ public class Test01 {
 
     }
 
-    @Test
-    public void test3(){
-        ConfigurationBeanDefinitionReader cr = new ConfigurationBeanDefinitionReader(CBean.class);
-        ComponentBeanDefinitionReader ar = new ComponentBeanDefinitionReader(ABean.class);
-        ComponentBeanDefinitionReader br = new ComponentBeanDefinitionReader(BBean.class);
-        DefaultListableBeanFactory sf =new DefaultListableBeanFactory();
-        sf.registerBeanDefinition(cr.getBeanDefinition().getBeanName(),cr.getBeanDefinition().getDefinition());
-        sf.registerBeanDefinition(ar.getBeanDefinition().getBeanName(),ar.getBeanDefinition().getDefinition());
-        sf.registerBeanDefinition(br.getBeanDefinition().getBeanName(),br.getBeanDefinition().getDefinition());
-        sf.singletonBeanInitialization();
-        System.out.println(Arrays.toString(sf.getBeanDefinitionNames()));
-        String[] names = sf.getBeanNamesForAnnotation(Component.class);
-
-        for (String name : names) {
-            System.out.println(sf.findAnnotationOnBean(name, Component.class));
-        }
-
-    }
-
 
     @Test
     public void test4(){
@@ -126,5 +119,23 @@ public class Test01 {
         for (Resource resource : resolver.getResources("classpath:**/*.*")) {
             System.out.println(resource);
         }
+    }
+
+    @Test
+    public void test6() throws IOException {
+        ApplicationContext context = new AnnotationPackageScannerApplicationContext(AppTest.class);
+        CBean bean = context.getBean(CBean.class);
+        System.out.println(bean);
+        CBean cBean = context.getBean(CBean.class);
+        CBean cBean2 = context.getBean(CBean.class);
+        System.out.println(cBean);
+        System.out.println(cBean2);
+        cBean.print();
+        System.out.println(Arrays.toString(context.getBeanDefinitionNames()));
+        for (int i = 0; i <3 ; i++) {
+            System.out.println(context.getBean(Test01.class));
+        }
+        context.close();
+
     }
 }

@@ -1,10 +1,7 @@
 package org.luckyframework.t1;
 
 import org.luckyframework.beans.BeanScope;
-import org.luckyframework.context.annotation.Autowired;
-import org.luckyframework.context.annotation.Component;
-import org.luckyframework.context.annotation.Scope;
-import org.luckyframework.context.annotation.Service;
+import org.luckyframework.context.annotation.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Parameter;
@@ -16,7 +13,7 @@ import java.lang.reflect.Parameter;
  */
 
 @Service
-@Scope(BeanScope.PROTOTYPE)
+@Lazy
 public class ABean {
 
     private Integer id;
@@ -27,8 +24,8 @@ public class ABean {
     private String name;
 
     @Autowired
-    public ABean(String name) {
-        this.name = name;
+    public ABean(BBean b) {
+        this.b = b;
     }
 
     public String getName() {

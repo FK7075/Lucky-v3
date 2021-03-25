@@ -6,6 +6,7 @@ import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.*;
 import org.luckyframework.context.annotation.*;
+import org.luckyframework.environment.Environment;
 import org.luckyframework.exception.BeanCreationException;
 
 import java.lang.reflect.Constructor;
@@ -23,13 +24,15 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
 
     protected final Class<?> componentClass;
     protected final Component component;
+    protected final Environment environment;
 
-    public ComponentBeanDefinitionReader(Class<?> componentClass){
+    public ComponentBeanDefinitionReader(Environment environment,Class<?> componentClass){
         Assert.notNull(componentClass,"class is null");
         Component component = AnnotatedElementUtils.findMergedAnnotation(componentClass, Component.class);
         Assert.notNull(component,"'"+componentClass+"' type is illegal, legal type should be marked by '@org.luckyframework.context.annotation.Component' annotation");
         this.component=component;
         this.componentClass=componentClass;
+        this.environment=environment;
     }
 
 
@@ -85,10 +88,12 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
         int i=0;
         BeanReference beanReference;
         for (Parameter parameter : parameters) {
+            Class<?> parameterType = parameter.getType();
+            String parameterName = parameter.getName();
             Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(parameter, Qualifier.class);
             Autowired autowired = AnnotatedElementUtils.findMergedAnnotation(parameter, Autowired.class);
             if(qualifier != null){
-                String beanName = Assert.isBlankString(qualifier.value())?parameter.getName():qualifier.value();
+                String beanName = Assert.isBlankString(qualifier.value())?parameterName:qualifier.value();
                 beanReference = new BeanReference(beanName);
                 boolean required = autowired == null || autowired.required();
                 beanReference.setRequired(required);
@@ -97,12 +102,17 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader {
             }
 
             if(autowired != null){
-                beanReference = new BeanReference(parameter.getName(),parameter.getType());
+                beanReference = new BeanReference(parameterName,parameterType);
                 beanReference.setRequired(autowired.required());
                 values[i++] = new ConstructorValue(beanReference);
                 continue;
             }
-            values[i++] = new ConstructorValue(parameter.getType(),null);
+
+            if(!ClassUtils.isJdkType(parameterType)){
+                values[i++] = new ConstructorValue(new BeanReference(parameterName,parameterType));
+                continue;
+            }
+            values[i++] = new ConstructorValue(parameterType,null);
         }
         return values;
     }

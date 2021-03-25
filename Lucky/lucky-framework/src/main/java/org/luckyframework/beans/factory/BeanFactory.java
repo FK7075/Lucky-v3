@@ -6,6 +6,7 @@ import org.luckyframework.beans.BeanReference;
 import org.luckyframework.exception.BeansException;
 import org.luckyframework.exception.NoSuchBeanDefinitionException;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +18,7 @@ import java.util.Properties;
  * @version 1.0.0
  * @date 2021/3/21 下午10:59
  */
-public interface BeanFactory {
+public interface BeanFactory extends Closeable {
 
 
     /**

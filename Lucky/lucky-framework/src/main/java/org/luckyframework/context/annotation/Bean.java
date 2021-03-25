@@ -15,10 +15,10 @@ import java.lang.annotation.*;
 public @interface Bean {
 
     @AliasFor("name")
-    String[] value() default {};
+    String value() default "";
 
     @AliasFor("value")
-    String[] name() default {};
+    String name() default "";
 
     boolean autowireCandidate() default true;
 

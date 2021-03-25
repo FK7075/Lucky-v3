@@ -96,7 +96,7 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
     private void doInit(BeanDefinition beanDefinition, Object instance) {
         if(!Assert.isBlankString(beanDefinition.getInitMethodName())){
             try {
-                Method initMethod = beanDefinition.getBeanClass().getMethod(beanDefinition.getInitMethodName());
+                Method initMethod = instance.getClass().getMethod(beanDefinition.getInitMethodName());
                 initMethod.invoke(instance);
             }catch (Exception e){
                 throw new BeanCreationException("An exception occurred during bean initialization ["+beanDefinition+"]",e);
@@ -437,19 +437,11 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
         return method.getReturnType();
     }
 
-    private Method getMethod(Class<?> aClass,String factoryMethodName,Object[] argumentValues){
-        if(Assert.isEmptyArray(argumentValues)){
+    private Method getMethod(Class<?> aClass,String factoryMethodName,ConstructorValue[] constructorValues){
+        if(Assert.isEmptyArray(constructorValues)){
             return MethodUtils.getMethod(aClass,factoryMethodName);
         }
-        Class<?>[] types = new Class<?>[argumentValues.length];
-        int i=0;
-        for (Object value : argumentValues) {
-            if(value instanceof BeanReference){
-                types[i++] = ((BeanReference)value).getReferenceType(this);
-            }else{
-                types[i++] = value.getClass();
-            }
-        }
+        Class<?>[] types = constructorValueToClasses(constructorValues);
         return getMethodByParamTypes(aClass,factoryMethodName,types);
     }
 
@@ -571,6 +563,13 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegister 
             }
         }
         return bean;
+    }
+
+    public void addInternalComponent(Object internalComponent){
+        Class<?> internalComponentClass = internalComponent.getClass();
+        String name = internalComponentClass.getName();
+        registerBeanDefinition(name,new GenericBeanDefinition(internalComponentClass));
+        singletonObjects.put(name,internalComponent);
     }
 
 

@@ -4,16 +4,22 @@ import com.lucky.utils.annotation.Nullable;
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.fileload.Resource;
 import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver;
+import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.ClassUtils;
+import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.factory.DefaultListableBeanFactory;
+import org.luckyframework.context.annotation.Component;
+import org.luckyframework.context.annotation.Configuration;
+import org.luckyframework.context.annotation.PropertySource;
+import org.luckyframework.environment.DefaultEnvironment;
+import org.luckyframework.environment.Environment;
 import org.luckyframework.exception.BeansException;
 import org.luckyframework.exception.LuckyIOException;
 import org.luckyframework.exception.NoSuchBeanDefinitionException;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author fk
@@ -22,20 +28,37 @@ import java.util.Set;
  */
 public class AnnotationPackageScannerApplicationContext implements ApplicationContext {
 
-    private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
     private final static int basePackageIndex = AnnotationPackageScannerApplicationContext.class.getResource("/").toString().length();
     private final static String CLASS_CONF_TEMP = "classpath:%s/**/*.class";
+    private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
     private final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
     private final String basePackage;
-    private Set<Class<?>> allClasses;
+    private final Set<Class<?>> allClasses = new HashSet<>();
+    private Environment environment;
+
 
     public AnnotationPackageScannerApplicationContext(String basePackage){
-        Assert.notNull(basePackage,"");
+        Assert.notNull(basePackage,"basePackage is null");
         this.basePackage=basePackage;
+        refresh();
     }
 
     public AnnotationPackageScannerApplicationContext(Class<?> baseClass){
         this(baseClass.getPackage().getName());
+    }
+
+
+    public void refresh(){
+        scanner();
+        initEnvironment();
+        loadInternalComponent();
+        loadBeanDefinition();
+        beanFactory.singletonBeanInitialization();
+    }
+
+    private void loadInternalComponent(){
+        beanFactory.addInternalComponent(environment);
+        beanFactory.addInternalComponent(this);
     }
 
     private void scanner(){
@@ -54,10 +77,32 @@ public class AnnotationPackageScannerApplicationContext implements ApplicationCo
         }
     }
 
+    public void initEnvironment(){
+        Set<PropertySource> propertySources = new HashSet<>();
+        for (Class<?> aClass : allClasses) {
+            PropertySource propertySource = AnnotatedElementUtils.findMergedAnnotation(aClass, PropertySource.class);
+            if(propertySource != null){
+                propertySources.add(propertySource);
+            }
+        }
+        environment = new DefaultEnvironment(propertySources.toArray(new PropertySource[]{}));
+    }
 
     public void loadBeanDefinition(){
-
-
+        for (Class<?> aClass : allClasses) {
+            if(AnnotationUtils.strengthenIsExist(aClass, Configuration.class)){
+                ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(environment,aClass);
+                List<BeanDefinitionReader.BeanDefinitionPojo> definitions = gr.getBeanDefinitions();
+                for (BeanDefinitionReader.BeanDefinitionPojo pojo : definitions) {
+                    beanFactory.registerBeanDefinition(pojo.getBeanName(),pojo.getDefinition());
+                }
+                continue;
+            }
+            if(AnnotationUtils.strengthenIsExist(aClass, Component.class)){
+                ComponentBeanDefinitionReader cr = new ComponentBeanDefinitionReader(environment,aClass);
+                beanFactory.registerBeanDefinition(cr.getBeanDefinition().getBeanName(),cr.getBeanDefinition().getDefinition());
+            }
+        }
     }
 
     @Override
@@ -159,5 +204,10 @@ public class AnnotationPackageScannerApplicationContext implements ApplicationCo
     @Override
     public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
         return this.beanFactory.findAnnotationOnBean(beanName,annotationType);
+    }
+
+    @Override
+    public void close() throws IOException {
+        this.beanFactory.close();
     }
 }

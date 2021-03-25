@@ -3,12 +3,16 @@ package org.luckyframework.beans.factory;
 import com.lucky.utils.annotation.Nullable;
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.reflect.AnnotationUtils;
+import com.lucky.utils.reflect.ClassUtils;
+import com.lucky.utils.reflect.MethodUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.BeanDefinition;
 import org.luckyframework.exception.BeansException;
 import org.luckyframework.exception.NoSuchBeanDefinitionException;
 
+import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -127,4 +131,15 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         return AnnotatedElementUtils.findMergedAnnotation(getType(beanName),annotationType);
     }
 
+    @Override
+    public void close() throws IOException {
+        for (String name : getBeanDefinitionNames()) {
+            BeanDefinition definition = getBeanDefinition(name);
+            if(definition.isSingleton() && !Assert.isBlankString(definition.getDestroyMethodName())){
+                Object bean = getBean(name);
+                Method method = MethodUtils.getMethod(bean.getClass(), definition.getDestroyMethodName());
+                MethodUtils.invoke(bean,method);
+            }
+        }
+    }
 }
