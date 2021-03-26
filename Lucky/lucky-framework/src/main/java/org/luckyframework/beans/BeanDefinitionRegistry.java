@@ -10,7 +10,7 @@ import java.util.Set;
  * @version 1.0
  * @date 2021/3/12 0012 18:28
  */
-public interface BeanDefinitionRegister {
+public interface BeanDefinitionRegistry {
 
     //注册bean定义
     void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) throws BeanDefinitionRegisterException;

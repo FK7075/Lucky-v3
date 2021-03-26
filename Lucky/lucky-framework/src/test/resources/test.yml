@@ -1,1 +1,6 @@
 os: ${os.name} ${os.version}
+int: 445
+list:
+  - 1
+  - 2
+  - 3

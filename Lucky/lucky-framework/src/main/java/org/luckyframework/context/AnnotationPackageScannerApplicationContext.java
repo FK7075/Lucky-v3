@@ -7,31 +7,33 @@ import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver
 import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
+import org.luckyframework.beans.aware.ApplicationContextAware;
+import org.luckyframework.beans.aware.Aware;
+import org.luckyframework.beans.aware.BeanFactoryAware;
+import org.luckyframework.beans.aware.EnvironmentAware;
 import org.luckyframework.beans.factory.DefaultListableBeanFactory;
 import org.luckyframework.context.annotation.Component;
 import org.luckyframework.context.annotation.Configuration;
 import org.luckyframework.context.annotation.PropertySource;
 import org.luckyframework.environment.DefaultEnvironment;
 import org.luckyframework.environment.Environment;
-import org.luckyframework.exception.BeansException;
 import org.luckyframework.exception.LuckyIOException;
-import org.luckyframework.exception.NoSuchBeanDefinitionException;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author fk
  * @version 1.0
  * @date 2021/3/25 0025 16:21
  */
-public class AnnotationPackageScannerApplicationContext implements ApplicationContext {
+public class AnnotationPackageScannerApplicationContext extends DefaultListableBeanFactory implements ApplicationContext {
 
-    private final static int basePackageIndex = AnnotationPackageScannerApplicationContext.class.getResource("/").toString().length();
     private final static String CLASS_CONF_TEMP = "classpath:%s/**/*.class";
+    private final static int basePackageIndex = AnnotationPackageScannerApplicationContext.class.getResource("/").toString().length();
     private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-    private final DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
     private final String basePackage;
     private final Set<Class<?>> allClasses = new HashSet<>();
     private Environment environment;
@@ -53,12 +55,12 @@ public class AnnotationPackageScannerApplicationContext implements ApplicationCo
         initEnvironment();
         loadInternalComponent();
         loadBeanDefinition();
-        beanFactory.singletonBeanInitialization();
+        singletonBeanInitialization();
     }
 
     private void loadInternalComponent(){
-        beanFactory.addInternalComponent(environment);
-        beanFactory.addInternalComponent(this);
+        addInternalComponent(environment);
+        addInternalComponent(this);
     }
 
     private void scanner(){
@@ -91,123 +93,53 @@ public class AnnotationPackageScannerApplicationContext implements ApplicationCo
     public void loadBeanDefinition(){
         for (Class<?> aClass : allClasses) {
             if(AnnotationUtils.strengthenIsExist(aClass, Configuration.class)){
-                ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(environment,aClass);
-                List<BeanDefinitionReader.BeanDefinitionPojo> definitions = gr.getBeanDefinitions();
-                for (BeanDefinitionReader.BeanDefinitionPojo pojo : definitions) {
-                    beanFactory.registerBeanDefinition(pojo.getBeanName(),pojo.getDefinition());
+                ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(this,environment,aClass);
+                if(gr.conditionJudgeByClass()){
+                    List<BeanDefinitionReader.BeanDefinitionPojo> definitions = gr.getBeanDefinitions();
+                    for (BeanDefinitionReader.BeanDefinitionPojo pojo : definitions) {
+                        registerBeanDefinition(pojo.getBeanName(),pojo.getDefinition());
+                    }
                 }
                 continue;
             }
             if(AnnotationUtils.strengthenIsExist(aClass, Component.class)){
-                ComponentBeanDefinitionReader cr = new ComponentBeanDefinitionReader(environment,aClass);
-                beanFactory.registerBeanDefinition(cr.getBeanDefinition().getBeanName(),cr.getBeanDefinition().getDefinition());
+                ComponentBeanDefinitionReader cr = new ComponentBeanDefinitionReader(this,environment,aClass);
+                if(cr.conditionJudgeByClass()){
+                    registerBeanDefinition(cr.getBeanDefinition().getBeanName(),cr.getBeanDefinition().getDefinition());
+                }
             }
         }
     }
 
     @Override
-    public Class<?> getType(String name) throws BeansException {
-        return this.beanFactory.getType(name);
+    public void setAware(Object instance) {
+        if(instance instanceof Aware){
+            if(instance instanceof EnvironmentAware){
+                ((EnvironmentAware)instance).setEnvironment(this.environment);
+            }
+            if(instance instanceof BeanFactoryAware){
+                ((BeanFactoryAware)instance).setBeanFactory(this);
+            }
+
+            if(instance instanceof ApplicationContextAware){
+                ((ApplicationContextAware)instance).setApplicationContext(this);
+            }
+        }
     }
 
     @Override
-    public Object getBean(String name) throws BeansException {
-        return this.beanFactory.getBean(name);
-    }
-
-    @Override
-    public <T> T getBean(String name, Class<T> requiredType) throws BeansException {
-        return this.beanFactory.getBean(name, requiredType);
-    }
-
-    @Override
-    public <T> T getBean(Class<T> requiredType) throws BeansException {
-        return this.beanFactory.getBean(requiredType);
-    }
-
-    @Override
-    public Object getBean(String name, Object... args) throws BeansException {
-        return this.beanFactory.getBean(name, args);
-    }
-
-    @Override
-    public <T> T getBean(Class<T> requiredType, Object... args) throws BeansException {
-        return this.beanFactory.getBean(requiredType, args);
-    }
-
-    @Override
-    public boolean isTypeMatch(String name, Class<?> typeToMatch) throws NoSuchBeanDefinitionException {
-        return this.beanFactory.isTypeMatch(name, typeToMatch);
-    }
-
-    @Override
-    public boolean containsBean(String name) {
-        return this.beanFactory.containsBean(name);
-    }
-
-    @Override
-    public boolean isSingleton(String name) throws NoSuchBeanDefinitionException {
-        return this.beanFactory.isSingleton(name);
-    }
-
-    @Override
-    public boolean isPrototype(String name) throws NoSuchBeanDefinitionException {
-        return this.beanFactory.isPrototype(name);
-    }
-
-    @Override
-    public boolean containsBeanDefinition(String beanName) {
-        return this.beanFactory.containsBeanDefinition(beanName);
-    }
-
-    @Override
-    public int getBeanDefinitionCount() {
-        return this.beanFactory.getBeanDefinitionCount();
-    }
-
-    @Override
-    public String[] getBeanDefinitionNames() {
-        return this.beanFactory.getBeanDefinitionNames();
-    }
-
-    @Override
-    public String[] getBeanNamesForType(@Nullable Class<?> type) {
-        return this.beanFactory.getBeanNamesForType(type);
-    }
-
-    @Override
-    public String[] getBeanNamesForType(@Nullable Class<?> type, boolean includeNonSingletons) {
-        return this.beanFactory.getBeanNamesForType(type,includeNonSingletons);
-    }
-
-    @Override
-    public String[] getBeanNamesForAnnotation(Class<? extends Annotation> annotationType) {
-        return this.beanFactory.getBeanNamesForAnnotation(annotationType);
-    }
-
-    @Override
-    public <T> Map<String, T> getBeansOfType(@Nullable Class<T> type) throws BeansException {
-        return this.beanFactory.getBeansOfType(type);
-    }
-
-    @Override
-    public <T> Map<String, T> getBeansOfType(@Nullable Class<T> type, boolean includeNonSingletons) throws BeansException {
-        return this.beanFactory.getBeansOfType(type, includeNonSingletons);
-    }
-
-    @Override
-    public Map<String, Object> getBeansWithAnnotation(Class<? extends Annotation> annotationType) throws BeansException {
-        return this.beanFactory.getBeansWithAnnotation(annotationType);
+    public Environment getEnvironment() {
+        return this.environment;
     }
 
     @Nullable
     @Override
-    public <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType) throws NoSuchBeanDefinitionException {
-        return this.beanFactory.findAnnotationOnBean(beanName,annotationType);
+    public ClassLoader getClassLoader() {
+        return resolver.getClassLoader();
     }
 
     @Override
-    public void close() throws IOException {
-        this.beanFactory.close();
+    public Resource getResource(String location) {
+        return resolver.getResource(location);
     }
 }

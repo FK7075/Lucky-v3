@@ -22,7 +22,7 @@ public interface Environment {
 
     Object getExternalConfigFileProperty(String key);
 
-    Object parsing(String expression);
+    Object parsing(Object expression);
 
     default Object getProperty(String key){
         Object property = getExternalConfigFileProperty(key);

@@ -3,10 +3,12 @@ package org.luckyframework.beans.factory;
 import com.lucky.utils.annotation.Nullable;
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.reflect.AnnotationUtils;
-import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.reflect.MethodUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.BeanDefinition;
+import org.luckyframework.beans.aware.Aware;
+import org.luckyframework.beans.aware.BeanFactoryAware;
+import org.luckyframework.exception.BeanDisposableException;
 import org.luckyframework.exception.BeansException;
 import org.luckyframework.exception.NoSuchBeanDefinitionException;
 
@@ -132,14 +134,38 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
     }
 
     @Override
+    public void setAware(Object instance) {
+        if(instance instanceof Aware){
+            if(instance instanceof BeanFactoryAware){
+                ((BeanFactoryAware)instance).setBeanFactory(this);
+            }
+        }
+    }
+
+    @Override
     public void close() throws IOException {
         for (String name : getBeanDefinitionNames()) {
             BeanDefinition definition = getBeanDefinition(name);
-            if(definition.isSingleton() && !Assert.isBlankString(definition.getDestroyMethodName())){
+            if(definition.isSingleton()){
                 Object bean = getBean(name);
-                Method method = MethodUtils.getMethod(bean.getClass(), definition.getDestroyMethodName());
-                MethodUtils.invoke(bean,method);
+                if(bean instanceof DisposableBean){
+                    try {
+                        ((DisposableBean)bean).destroy();
+                    } catch (Exception e) {
+                       throw new BeanDisposableException("An exception occurred when using the 'DisposableBean#destroy()' destruction method of the bean named '"+name+"'.",e);
+                    }
+                }
+
+                if(!Assert.isBlankString(definition.getDestroyMethodName())){
+                    try{
+                        Method method = MethodUtils.getMethod(bean.getClass(), definition.getDestroyMethodName());
+                        MethodUtils.invoke(bean,method);
+                    }catch (Exception e){
+                        throw new BeanDisposableException("An exception occurred when using the destroy method in the bean definition. bean: '"+bean+"' BeanDefinition: '"+definition+"'",e);
+                    }
+                }
             }
         }
+        clear();
     }
 }

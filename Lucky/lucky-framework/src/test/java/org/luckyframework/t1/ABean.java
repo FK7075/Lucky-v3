@@ -1,6 +1,8 @@
 package org.luckyframework.t1;
 
 import org.luckyframework.beans.BeanScope;
+import org.luckyframework.beans.factory.DisposableBean;
+import org.luckyframework.beans.factory.InitializingBean;
 import org.luckyframework.context.annotation.*;
 
 import java.lang.reflect.Constructor;
@@ -14,7 +16,7 @@ import java.lang.reflect.Parameter;
 
 @Service
 @Lazy
-public class ABean {
+public class ABean implements InitializingBean, DisposableBean {
 
     private Integer id;
     private BBean b;
@@ -24,8 +26,9 @@ public class ABean {
     private String name;
 
     @Autowired
-    public ABean(BBean b) {
+    public ABean(BBean b,@Value("${os}") String name) {
         this.b = b;
+        this.name = name;
     }
 
     public String getName() {
@@ -71,5 +74,15 @@ public class ABean {
             }
 
         }
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        System.out.println("ABean#afterPropertiesSet() "+name);
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        System.out.println("ABean#destroy() "+name);
     }
 }

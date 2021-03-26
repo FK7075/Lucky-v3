@@ -66,4 +66,5 @@ public interface ListableBeanFactory extends BeanFactory {
     <A extends Annotation> A findAnnotationOnBean(String beanName, Class<A> annotationType)
             throws NoSuchBeanDefinitionException;
 
+    void setAware(Object instance);
 }

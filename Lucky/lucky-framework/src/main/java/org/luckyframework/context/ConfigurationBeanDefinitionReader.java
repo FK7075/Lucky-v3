@@ -1,24 +1,24 @@
 package org.luckyframework.context;
 
 import com.lucky.utils.base.Assert;
-import com.lucky.utils.base.BaseUtils;
 import com.lucky.utils.proxy.ASMUtil;
 import com.lucky.utils.reflect.ClassUtils;
-import com.lucky.utils.reflect.MethodUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import com.lucky.utils.type.AnnotationUtils;
+import com.lucky.utils.type.ResolvableType;
+import com.lucky.utils.type.StandardMethodMetadata;
 import org.luckyframework.beans.BeanDefinition;
 import org.luckyframework.beans.BeanReference;
 import org.luckyframework.beans.ConstructorValue;
 import org.luckyframework.beans.GenericBeanDefinition;
 import org.luckyframework.context.annotation.*;
 import org.luckyframework.environment.Environment;
-import org.luckyframework.exception.BeanDefinitionRegisterException;
 import org.luckyframework.exception.LuckyIOException;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,19 +34,20 @@ public class ConfigurationBeanDefinitionReader extends ComponentBeanDefinitionRe
     private final Map<String, BeanDefinition> configurationBeanDefinitions = new HashMap<>(10);
 
 
-    public ConfigurationBeanDefinitionReader(Environment environment,Class<?> configurationBeanClass){
-        super(environment,configurationBeanClass);
+    public ConfigurationBeanDefinitionReader(ApplicationContext context,Environment environment,Class<?> configurationBeanClass){
+        super(context,environment,configurationBeanClass);
         Configuration annotation = AnnotatedElementUtils.findMergedAnnotation(configurationBeanClass, Configuration.class);
         Assert.notNull(annotation,"'"+configurationBeanClass+"' type is illegal, legal type should be marked by '@org.luckyframework.context.annotation.Configuration' annotation");
     }
 
     public List<BeanDefinitionPojo> getBeanDefinitions(){
         List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
-        beanDefinitions.add(this.getBeanDefinition());
-
+        if(super.conditionJudgeByClass()){
+            beanDefinitions.add(this.getBeanDefinition());
+        }
         List<Method> beanMethods = ClassUtils.getMethodByAnnotation(componentClass, Bean.class);
         for (Method method : beanMethods) {
-            if (method.getReturnType() == void.class){
+            if (!conditionJudgeByMethod(method)){
                 continue;
             }
             Bean beanAnn = AnnotationUtils.findAnnotation(method,Bean.class);
@@ -86,6 +87,7 @@ public class ConfigurationBeanDefinitionReader extends ComponentBeanDefinitionRe
            throw new LuckyIOException(e);
         }
 
+        Type[] genericParameterTypes = method.getGenericParameterTypes();
         ConstructorValue[] constructorValues = new ConstructorValue[parameters.length];
         BeanReference beanReference;
         for (int i = 0,j=parameters.length ; i < j; i++) {
@@ -93,6 +95,7 @@ public class ConfigurationBeanDefinitionReader extends ComponentBeanDefinitionRe
             Class<?> paramType = parameters[i].getType();
             Qualifier qualifier = AnnotatedElementUtils.findMergedAnnotation(parameters[i], Qualifier.class);
             Autowired autowired = AnnotatedElementUtils.findMergedAnnotation(parameters[i], Autowired.class);
+            Value value = AnnotatedElementUtils.findMergedAnnotation(parameters[i], Value.class);
             if(qualifier != null){
                 String beanName = Assert.isBlankString(qualifier.value())?parameterName:qualifier.value();
                 beanReference = new BeanReference(beanName);
@@ -109,6 +112,11 @@ public class ConfigurationBeanDefinitionReader extends ComponentBeanDefinitionRe
                 continue;
             }
 
+            if(value != null){
+                constructorValues[i] = new ConstructorValue(paramType,getRealValue(ResolvableType.forType(genericParameterTypes[i]),value));
+                continue;
+            }
+
             if(!ClassUtils.isJdkType(paramType)){
                 constructorValues[i] = new ConstructorValue(new BeanReference(parameterName,paramType));
                 continue;
@@ -116,5 +124,22 @@ public class ConfigurationBeanDefinitionReader extends ComponentBeanDefinitionRe
             constructorValues[i] = new ConstructorValue(paramType,null);
         }
         return constructorValues;
+    }
+
+    public boolean conditionJudgeByMethod(Method beanMethod){
+        Conditional conditional = AnnotatedElementUtils.findMergedAnnotation(beanMethod, Conditional.class);
+        if(conditional == null){
+            return true;
+        }
+
+        Class<? extends Condition>[] conditionClasses = conditional.value();
+        for (Class<? extends Condition> conditionClass : conditionClasses) {
+            Condition condition = ClassUtils.newObject(conditionClass);
+            boolean matches = condition.matches(getConditionContext(), new StandardMethodMetadata(beanMethod));
+            if(!matches){
+                return false;
+            }
+        }
+        return true;
     }
 }

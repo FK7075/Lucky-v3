@@ -2,6 +2,8 @@ package org.luckyframework.t1;
 
 import com.lucky.utils.fileload.Resource;
 import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver;
+import com.lucky.utils.reflect.FieldUtils;
+import com.lucky.utils.type.ResolvableType;
 import org.junit.Test;
 import org.luckyframework.AppTest;
 import org.luckyframework.beans.*;
@@ -14,12 +16,12 @@ import org.luckyframework.context.annotation.Component;
 import org.luckyframework.environment.DefaultEnvironment;
 import org.luckyframework.environment.Environment;
 import org.luckyframework.exception.BeanDefinitionRegisterException;
+import org.luckyframework.t1.service.FileCommand;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Properties;
+import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * @author fk
@@ -135,7 +137,28 @@ public class Test01 {
         for (int i = 0; i <3 ; i++) {
             System.out.println(context.getBean(Test01.class));
         }
+        Environment environment = context.getBean(Environment.class);
+        String[] split = environment.getProperty("java.class.path").toString().split(";");
+        for (String s : split) {
+            System.out.println(s);
+        }
         context.close();
 
+    }
+
+    List<String> list = new ArrayList<>();
+
+    @Test
+    public void test7(){
+        Field field = FieldUtils.getDeclaredField(this.getClass(),"list");
+        ResolvableType type = ResolvableType.forField(field);
+        System.out.println(type.resolveGeneric(0));
+    }
+
+    @Test
+    public void test8(){
+        ApplicationContext context = new AnnotationPackageScannerApplicationContext(AppTest.class);
+        System.out.println(context.getType("tt2"));
+        System.out.println(context.getBean("tt1"));
     }
 }

@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0
  * @date 2021/3/23 0023 10:05
  */
-public class DefaultBeanDefinitionRegister implements BeanDefinitionRegister {
+public class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
 
     private final Map<String,BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
 

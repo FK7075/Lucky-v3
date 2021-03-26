@@ -99,8 +99,11 @@ public class DefaultEnvironment implements Environment {
     }
 
     @Override
-    public Object parsing(String expression) {
-        return getObject(expression);
+    public Object parsing(Object expression) {
+        if(expression instanceof String){
+            return getObject(expression.toString());
+        }
+        return expression;
     }
 
     @Override
