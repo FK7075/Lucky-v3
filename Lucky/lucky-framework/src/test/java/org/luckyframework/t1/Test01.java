@@ -159,6 +159,8 @@ public class Test01 {
     public void test8(){
         ApplicationContext context = new AnnotationPackageScannerApplicationContext(AppTest.class);
         System.out.println(context.getType("tt2"));
-        System.out.println(context.getBean("tt1"));
+        System.out.println(context.getBean("tt"));
+        FileCommand fileCommand = context.getBean(FileCommand.class);
+        System.out.println(fileCommand.getCommand());
     }
 }
