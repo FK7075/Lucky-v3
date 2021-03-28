@@ -15,10 +15,8 @@ import org.luckyframework.exception.NoSuchBeanDefinitionException;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author fk
@@ -27,37 +25,61 @@ import java.util.Map;
  */
 public class DefaultListableBeanFactory extends StandardBeanFactory {
 
+    // bean类型与名称的映射
+    private final Map<Class<?>,String[]> forTypeNamesMap = new ConcurrentHashMap<>(30);
+    // 注解与名称的映射
+    private final Map<Class<? extends Annotation>,String[]> forAnnotationNamesMap = new ConcurrentHashMap<>(16);
+    // 所有单例bean的名称
+    private Set<String> singletonBeanNames;
+
+    /**
+     * 实例化所有的单例bean
+     */
     public void singletonBeanInitialization() {
-        for (String definitionName : getBeanDefinitionNames()) {
-            BeanDefinition definition = getBeanDefinition(definitionName);
-            if(definition.isSingleton() && !definition.isLazyInit()){
-                getBean(definitionName);
-            }
+        for (String singletonBeanName : getSingletonBeanNames()) {
+            doGetBean(singletonBeanName);
         }
     }
 
+    @Override
+    public void removerSingletonObject(String name){
+        super.removerSingletonObject(name);
+        singletonBeanNames.remove(name);
+    }
+
+    /**
+     * 获取所有单例bean的名称
+     * @return 所有单例bean的名称
+     */
     public String[] getSingletonBeanNames(){
-        List<String> names = new ArrayList<>();
-        for (String definitionName : getBeanDefinitionNames()) {
-            BeanDefinition definition = getBeanDefinition(definitionName);
-            if(definition.isSingleton() ){
-                names.add(definitionName);
+        if(singletonBeanNames == null){
+            singletonBeanNames = new HashSet<>(225);
+            for (String definitionName : getBeanDefinitionNames()) {
+                BeanDefinition definition = getBeanDefinition(definitionName);
+                if(definition.isSingleton() ){
+                    singletonBeanNames.add(definitionName);
+                }
             }
         }
-        return names.toArray(new String[]{});
+        return singletonBeanNames.toArray(EMPTY_STRING_ARRAY);
     }
 
     @Override
     public String[] getBeanNamesForType(@Nullable Class<?> type) {
         Assert.notNull(type,"type is null");
-        List<String> typeNames =new ArrayList<>();
-        String[] definitionNames = getBeanDefinitionNames();
-        for (String name : definitionNames) {
-            if(isTypeMatch(name,type)){
-                typeNames.add(name);
+        String[] forTypeNames = forTypeNamesMap.get(type);
+        if(forTypeNames == null){
+            List<String> typeNames =new ArrayList<>();
+            String[] definitionNames = getBeanDefinitionNames();
+            for (String name : definitionNames) {
+                if(isTypeMatch(name,type)){
+                    typeNames.add(name);
+                }
             }
+            forTypeNames = typeNames.toArray(EMPTY_STRING_ARRAY);
+            forTypeNamesMap.put(type,forTypeNames);
         }
-        return typeNames.toArray(new String[]{});
+        return forTypeNames;
     }
 
     @Override
@@ -78,14 +100,20 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
 
     @Override
     public String[] getBeanNamesForAnnotation(Class<? extends Annotation> annotationType) {
-        List<String> typeNames =new ArrayList<>();
-        String[] definitionNames = getBeanDefinitionNames();
-        for (String name : definitionNames) {
-            if(AnnotationUtils.strengthenIsExist(getType(name),annotationType)){
-                typeNames.add(name);
+        String[] forAnnotationNames = forAnnotationNamesMap.get(annotationType);
+        if(forAnnotationNames == null){
+            List<String> typeNames =new ArrayList<>();
+            String[] definitionNames = getBeanDefinitionNames();
+            for (String name : definitionNames) {
+                if(AnnotationUtils.strengthenIsExist(getType(name),annotationType)){
+                    typeNames.add(name);
+                }
             }
+            forAnnotationNames = typeNames.toArray(new String[]{});
+            forAnnotationNamesMap.put(annotationType,forAnnotationNames);
         }
-        return typeNames.toArray(new String[]{});
+
+        return forAnnotationNames;
     }
 
     @Override
@@ -144,25 +172,23 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
 
     @Override
     public void close() throws IOException {
-        for (String name : getBeanDefinitionNames()) {
-            BeanDefinition definition = getBeanDefinition(name);
-            if(definition.isSingleton()){
-                Object bean = getBean(name);
-                if(bean instanceof DisposableBean){
-                    try {
-                        ((DisposableBean)bean).destroy();
-                    } catch (Exception e) {
-                       throw new BeanDisposableException("An exception occurred when using the 'DisposableBean#destroy()' destruction method of the bean named '"+name+"'.",e);
-                    }
+        for (String singletonBeanName : getSingletonBeanNames()) {
+            Object bean = getBean(singletonBeanName);
+            if(bean instanceof DisposableBean){
+                try {
+                    ((DisposableBean)bean).destroy();
+                } catch (Exception e) {
+                    throw new BeanDisposableException("An exception occurred when using the 'DisposableBean#destroy()' destruction method of the bean named '"+singletonBeanName+"'.",e);
                 }
+            }
 
-                if(!Assert.isBlankString(definition.getDestroyMethodName())){
-                    try{
-                        Method method = MethodUtils.getMethod(bean.getClass(), definition.getDestroyMethodName());
-                        MethodUtils.invoke(bean,method);
-                    }catch (Exception e){
-                        throw new BeanDisposableException("An exception occurred when using the destroy method in the bean definition. bean: '"+bean+"' BeanDefinition: '"+definition+"'",e);
-                    }
+            String destroyMethodName = getBeanDefinition(singletonBeanName).getDestroyMethodName();
+            if(!Assert.isBlankString(destroyMethodName)){
+                try{
+                    Method method = MethodUtils.getMethod(bean.getClass(), destroyMethodName);
+                    MethodUtils.invoke(bean,method);
+                }catch (Exception e){
+                    throw new BeanDisposableException("An exception occurred when using the destroy method in the bean definition. bean: '"+singletonBeanName+"'",e);
                 }
             }
         }

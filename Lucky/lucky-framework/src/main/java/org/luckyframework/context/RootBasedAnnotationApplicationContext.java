@@ -7,6 +7,7 @@ import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver
 import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
+import org.luckyframework.beans.BeanPostProcessor;
 import org.luckyframework.beans.aware.ApplicationContextAware;
 import org.luckyframework.beans.aware.Aware;
 import org.luckyframework.beans.aware.BeanFactoryAware;
@@ -29,23 +30,24 @@ import java.util.Set;
  * @version 1.0
  * @date 2021/3/25 0025 16:21
  */
-public class AnnotationPackageScannerApplicationContext extends DefaultListableBeanFactory implements ApplicationContext {
+public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFactory implements ApplicationContext {
 
     private final static String CLASS_CONF_TEMP = "classpath:%s/**/*.class";
-    private final static int basePackageIndex = AnnotationPackageScannerApplicationContext.class.getResource("/").toString().length();
+    private final static int basePackageIndex = RootBasedAnnotationApplicationContext.class.getResource("/").toString().length();
     private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
     private final String basePackage;
-    private final Set<Class<?>> allClasses = new HashSet<>();
+    private final Set<Class<?>> componentClasses = new HashSet<>(225);
+    private final Set<Class<?>> configurationClasses = new HashSet<>(100);
     private Environment environment;
 
 
-    public AnnotationPackageScannerApplicationContext(String basePackage){
+    public RootBasedAnnotationApplicationContext(String basePackage){
         Assert.notNull(basePackage,"basePackage is null");
         this.basePackage=basePackage;
         refresh();
     }
 
-    public AnnotationPackageScannerApplicationContext(Class<?> baseClass){
+    public RootBasedAnnotationApplicationContext(Class<?> baseClass){
         this(baseClass.getPackage().getName());
     }
 
@@ -55,7 +57,15 @@ public class AnnotationPackageScannerApplicationContext extends DefaultListableB
         initEnvironment();
         loadInternalComponent();
         loadBeanDefinition();
+        registeredBeanPostProcessor();
         singletonBeanInitialization();
+    }
+
+    private void registeredBeanPostProcessor() {
+        String[] names = getBeanNamesForType(BeanPostProcessor.class);
+        for (String name : names) {
+            registerBeanPostProcessor((BeanPostProcessor) getBean(name));
+        }
     }
 
     private void loadInternalComponent(){
@@ -72,7 +82,14 @@ public class AnnotationPackageScannerApplicationContext extends DefaultListableB
                 String fullClass = resource.getURL().toString();
                 fullClass = fullClass.substring(basePackageIndex,fullClass.lastIndexOf("."))
                         .replaceAll("/",".");
-                allClasses.add(ClassUtils.getClass(fullClass));
+                Class<?> aClass = ClassUtils.getClass(fullClass);
+                if(AnnotationUtils.strengthenIsExist(aClass,Configuration.class)){
+                    configurationClasses.add(aClass);
+                    continue;
+                }
+                if(AnnotationUtils.strengthenIsExist(aClass, Component.class)){
+                    componentClasses.add(aClass);
+                }
             }
         } catch (IOException e) {
             throw new LuckyIOException(e);
@@ -81,7 +98,7 @@ public class AnnotationPackageScannerApplicationContext extends DefaultListableB
 
     public void initEnvironment(){
         Set<PropertySource> propertySources = new HashSet<>();
-        for (Class<?> aClass : allClasses) {
+        for (Class<?> aClass : configurationClasses) {
             PropertySource propertySource = AnnotatedElementUtils.findMergedAnnotation(aClass, PropertySource.class);
             if(propertySource != null){
                 propertySources.add(propertySource);
@@ -91,22 +108,19 @@ public class AnnotationPackageScannerApplicationContext extends DefaultListableB
     }
 
     public void loadBeanDefinition(){
-        for (Class<?> aClass : allClasses) {
-            if(AnnotationUtils.strengthenIsExist(aClass, Configuration.class)){
-                ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(this,environment,aClass);
-                if(gr.conditionJudgeByClass()){
-                    List<BeanDefinitionReader.BeanDefinitionPojo> definitions = gr.getBeanDefinitions();
-                    for (BeanDefinitionReader.BeanDefinitionPojo pojo : definitions) {
-                        registerBeanDefinition(pojo.getBeanName(),pojo.getDefinition());
-                    }
+        for (Class<?> configurationClass : configurationClasses) {
+            ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(this, environment, configurationClass);
+            if (gr.conditionJudgeByClass()) {
+                List<BeanDefinitionReader.BeanDefinitionPojo> definitions = gr.getBeanDefinitions();
+                for (BeanDefinitionReader.BeanDefinitionPojo pojo : definitions) {
+                    registerBeanDefinition(pojo.getBeanName(), pojo.getDefinition());
                 }
-                continue;
             }
-            if(AnnotationUtils.strengthenIsExist(aClass, Component.class)){
-                ComponentBeanDefinitionReader cr = new ComponentBeanDefinitionReader(this,environment,aClass);
-                if(cr.conditionJudgeByClass()){
-                    registerBeanDefinition(cr.getBeanDefinition().getBeanName(),cr.getBeanDefinition().getDefinition());
-                }
+        }
+        for (Class<?> componentClass : componentClasses) {
+            ComponentBeanDefinitionReader cr = new ComponentBeanDefinitionReader(this,environment,componentClass);
+            if(cr.conditionJudgeByClass()){
+                registerBeanDefinition(cr.getBeanDefinition().getBeanName(),cr.getBeanDefinition().getDefinition());
             }
         }
     }

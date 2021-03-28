@@ -1,6 +1,7 @@
 package org.luckyframework.beans;
 
 import com.lucky.utils.base.Assert;
+import org.luckyframework.beans.factory.BeanFactory;
 
 /**
  * @author fk
@@ -13,10 +14,10 @@ public class ConstructorValue {
 
     private Object value;
 
-    public Class<?> getType() {
+    public Class<?> getType(BeanFactory beanFactory) {
         if(type == null){
             if(value instanceof BeanReference){
-                type = ((BeanReference)value).getType();
+                type = ((BeanReference)value).getReferenceType(beanFactory);
             }else{
                 type = value.getClass();
             }

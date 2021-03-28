@@ -8,18 +8,13 @@ import org.junit.Test;
 import org.luckyframework.AppTest;
 import org.luckyframework.beans.*;
 import org.luckyframework.beans.factory.DefaultListableBeanFactory;
-import org.luckyframework.context.AnnotationPackageScannerApplicationContext;
+import org.luckyframework.context.RootBasedAnnotationApplicationContext;
 import org.luckyframework.context.ApplicationContext;
-import org.luckyframework.context.ComponentBeanDefinitionReader;
-import org.luckyframework.context.ConfigurationBeanDefinitionReader;
-import org.luckyframework.context.annotation.Component;
 import org.luckyframework.environment.DefaultEnvironment;
 import org.luckyframework.environment.Environment;
 import org.luckyframework.exception.BeanDefinitionRegisterException;
-import org.luckyframework.t1.service.FileCommand;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
 
@@ -125,7 +120,7 @@ public class Test01 {
 
     @Test
     public void test6() throws IOException {
-        ApplicationContext context = new AnnotationPackageScannerApplicationContext(AppTest.class);
+        ApplicationContext context = new RootBasedAnnotationApplicationContext(AppTest.class);
         CBean bean = context.getBean(CBean.class);
         System.out.println(bean);
         CBean cBean = context.getBean(CBean.class);
@@ -156,11 +151,15 @@ public class Test01 {
     }
 
     @Test
-    public void test8(){
-        ApplicationContext context = new AnnotationPackageScannerApplicationContext(AppTest.class);
+    public void test8() throws IOException {
+        ApplicationContext context = new RootBasedAnnotationApplicationContext(AppTest.class);
         System.out.println(context.getType("tt2"));
         System.out.println(context.getBean("tt"));
-        FileCommand fileCommand = context.getBean(FileCommand.class);
-        System.out.println(fileCommand.getCommand());
+        for (String singletonObjectName : context.getBeanNamesForType(void.class)) {
+            System.out.println(singletonObjectName);
+        }
+
+        System.out.println(context.getType("myFactoryBean"));
+        context.close();
     }
 }

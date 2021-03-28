@@ -54,10 +54,6 @@ public class BeanReference {
         this.autowire = autowire;
     }
 
-    public Class<?> getType() {
-        return type;
-    }
-
     public void setType(Class<?> type) {
         this.type = type;
     }

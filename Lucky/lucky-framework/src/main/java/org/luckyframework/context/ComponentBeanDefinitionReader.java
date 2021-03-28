@@ -7,7 +7,6 @@ import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import com.lucky.utils.type.AnnotationMetadata;
 import com.lucky.utils.type.ResolvableType;
-import com.lucky.utils.type.StandardAnnotationMetadata;
 import org.luckyframework.beans.*;
 import org.luckyframework.context.annotation.*;
 import org.luckyframework.environment.Environment;
@@ -38,7 +37,7 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
     public ComponentBeanDefinitionReader(ApplicationContext context,Environment environment,Class<?> componentClass){
         Assert.notNull(componentClass,"class is null");
         Component component = AnnotatedElementUtils.findMergedAnnotation(componentClass, Component.class);
-        Assert.notNull(component,"'"+componentClass+"' type is illegal, legal type should be marked by '@org.luckyframework.context.annotation.Component' annotation");
+//        Assert.notNull(component,"'"+componentClass+"' type is illegal, legal type should be marked by '@org.luckyframework.context.annotation.Component' annotation");
         this.component=component;
         this.componentClass=componentClass;
         this.environment=environment;
@@ -47,6 +46,9 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
 
 
     protected String getThisBeanName(){
+        if(component == null){
+            return BaseUtils.lowercaseFirstLetter(componentClass.getSimpleName());
+        }
         return Assert.isBlankString(component.value())
                 ? BaseUtils.lowercaseFirstLetter(componentClass.getSimpleName())
                 : component.value();

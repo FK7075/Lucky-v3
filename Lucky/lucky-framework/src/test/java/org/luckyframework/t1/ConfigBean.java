@@ -15,7 +15,6 @@ import org.luckyframework.t1.service.WindowsFileCommand;
  * @date 2021/3/26 0026 15:31
  */
 @Configuration
-@Conditional(WindowsCondition.class)
 public class ConfigBean {
 
     @Bean
@@ -25,7 +24,7 @@ public class ConfigBean {
     }
 
     @Bean
-    @Conditional(WindowsCondition.class)
+//    @Conditional(WindowsCondition.class)
     public FileCommand windows(){
         return new WindowsFileCommand();
     }

@@ -20,6 +20,9 @@ import java.util.Properties;
  */
 public interface BeanFactory extends Closeable {
 
+    String[] EMPTY_STRING_ARRAY = new String[]{};
+
+    NullObject NULL_OBJECT = new NullObject();
 
     /**
      * 获取bean的类型
