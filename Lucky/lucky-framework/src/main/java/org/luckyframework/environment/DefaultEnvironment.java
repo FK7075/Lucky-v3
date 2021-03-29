@@ -71,7 +71,8 @@ public class DefaultEnvironment implements Environment {
     }
 
     private Object getObject(String key){
-        return jexlEngineUtil.getProperties(key);
+        Object value = jexlEngineUtil.getProperties(key);
+        return value == null ? key :value;
     }
 
     private Object getProperties(String prefix){

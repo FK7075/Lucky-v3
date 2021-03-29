@@ -8,6 +8,7 @@ import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.BeanDefinition;
 import org.luckyframework.beans.aware.Aware;
 import org.luckyframework.beans.aware.BeanFactoryAware;
+import org.luckyframework.beans.aware.ClassLoaderAware;
 import org.luckyframework.exception.BeanDisposableException;
 import org.luckyframework.exception.BeansException;
 import org.luckyframework.exception.NoSuchBeanDefinitionException;
@@ -166,6 +167,10 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         if(instance instanceof Aware){
             if(instance instanceof BeanFactoryAware){
                 ((BeanFactoryAware)instance).setBeanFactory(this);
+            }
+
+            if(instance instanceof ClassLoaderAware){
+                ((ClassLoaderAware)instance).setClassLoader(this.getClass().getClassLoader());
             }
         }
     }

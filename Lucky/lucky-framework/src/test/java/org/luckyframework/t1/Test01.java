@@ -155,11 +155,24 @@ public class Test01 {
         ApplicationContext context = new RootBasedAnnotationApplicationContext(AppTest.class);
         System.out.println(context.getType("tt2"));
         System.out.println(context.getBean("tt"));
-        for (String singletonObjectName : context.getBeanNamesForType(void.class)) {
+        System.out.println("=========");
+        for (String singletonObjectName : context.getSingletonObjectNames()) {
             System.out.println(singletonObjectName);
         }
+        System.out.println("=========");
 
         System.out.println(context.getType("myFactoryBean"));
         context.close();
     }
+
+    @Test
+    public void test9() throws IOException {
+        ApplicationContext context = new RootBasedAnnotationApplicationContext("org.luckyframework");
+        for (int i = 0; i < 3; i++) {
+            System.out.println(context.getBean("myFactoryBean").hashCode());
+        }
+        context.close();
+    }
+
+
 }

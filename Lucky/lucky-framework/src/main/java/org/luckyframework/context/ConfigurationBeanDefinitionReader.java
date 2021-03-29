@@ -7,7 +7,7 @@ import com.lucky.utils.type.AnnotatedElementUtils;
 import com.lucky.utils.type.AnnotationUtils;
 import com.lucky.utils.type.ResolvableType;
 import com.lucky.utils.type.StandardMethodMetadata;
-import org.luckyframework.beans.BeanDefinition;
+import org.luckyframework.beans.BeanDefinitionRegistry;
 import org.luckyframework.beans.BeanReference;
 import org.luckyframework.beans.ConstructorValue;
 import org.luckyframework.beans.GenericBeanDefinition;
@@ -19,10 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @author fk
@@ -31,20 +28,12 @@ import java.util.Map;
  */
 public class ConfigurationBeanDefinitionReader extends ComponentBeanDefinitionReader {
 
-    private final Map<String, BeanDefinition> configurationBeanDefinitions = new HashMap<>(10);
-
-
-    public ConfigurationBeanDefinitionReader(ApplicationContext context,Environment environment,Class<?> configurationBeanClass){
-        super(context,environment,configurationBeanClass);
-        Configuration annotation = AnnotatedElementUtils.findMergedAnnotation(configurationBeanClass, Configuration.class);
-        Assert.notNull(annotation,"'"+configurationBeanClass+"' type is illegal, legal type should be marked by '@org.luckyframework.context.annotation.Configuration' annotation");
+    public ConfigurationBeanDefinitionReader(ApplicationContext context, Environment environment, BeanDefinitionRegistry registry, Class<?> configurationBeanClass){
+        super(context,environment,registry,configurationBeanClass);
     }
 
     public List<BeanDefinitionPojo> getBeanDefinitions(){
-        List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
-        if(super.conditionJudgeByClass()){
-            beanDefinitions.add(this.getBeanDefinition());
-        }
+        List<BeanDefinitionPojo> beanDefinitions = super.getBeanDefinitions();
         List<Method> beanMethods = ClassUtils.getMethodByAnnotation(componentClass, Bean.class);
         for (Method method : beanMethods) {
             if (!conditionJudgeByMethod(method)){

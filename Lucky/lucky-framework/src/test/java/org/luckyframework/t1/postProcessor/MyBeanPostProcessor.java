@@ -10,7 +10,7 @@ import org.luckyframework.environment.Environment;
  * @version 1.0.0
  * @date 2021/3/26 下午10:30
  */
-@Component
+//@Component
 public class MyBeanPostProcessor implements BeanPostProcessor {
 
     @Override

@@ -14,11 +14,11 @@ import org.luckyframework.environment.Environment;
  */
 public class ConditionContextImpl implements ConditionContext {
 
-    private BeanDefinitionRegistry registry;
-    private Environment environment;
-    private ClassLoader loader;
-    private ListableBeanFactory beanFactory;
-    private ResourceLoader resourceLoader;
+    private final BeanDefinitionRegistry registry;
+    private final Environment environment;
+    private final ClassLoader loader;
+    private final ListableBeanFactory beanFactory;
+    private final ResourceLoader resourceLoader;
 
     public ConditionContextImpl(BeanDefinitionRegistry registry, Environment environment, ListableBeanFactory beanFactory, ResourceLoader resourceLoader) {
         this.registry = registry;

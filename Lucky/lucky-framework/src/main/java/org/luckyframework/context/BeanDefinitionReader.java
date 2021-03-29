@@ -2,6 +2,8 @@ package org.luckyframework.context;
 
 import org.luckyframework.beans.BeanDefinition;
 
+import java.util.List;
+
 /**
  * BeanDefinition的读取器
  * @author fk
@@ -13,7 +15,9 @@ public interface BeanDefinitionReader {
     /**
      * 获取解析得到的BeanDefinition
      */
-    BeanDefinitionPojo getBeanDefinition();
+    List<BeanDefinitionPojo> getBeanDefinitions();
+
+
 
 
     class BeanDefinitionPojo{

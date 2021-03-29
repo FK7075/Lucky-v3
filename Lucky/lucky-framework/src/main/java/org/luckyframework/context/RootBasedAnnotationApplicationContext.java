@@ -8,13 +8,11 @@ import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.BeanPostProcessor;
-import org.luckyframework.beans.aware.ApplicationContextAware;
-import org.luckyframework.beans.aware.Aware;
-import org.luckyframework.beans.aware.BeanFactoryAware;
-import org.luckyframework.beans.aware.EnvironmentAware;
+import org.luckyframework.beans.aware.*;
 import org.luckyframework.beans.factory.DefaultListableBeanFactory;
 import org.luckyframework.context.annotation.Component;
 import org.luckyframework.context.annotation.Configuration;
+import org.luckyframework.context.annotation.Import;
 import org.luckyframework.context.annotation.PropertySource;
 import org.luckyframework.environment.DefaultEnvironment;
 import org.luckyframework.environment.Environment;
@@ -38,6 +36,7 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
     private final String basePackage;
     private final Set<Class<?>> componentClasses = new HashSet<>(225);
     private final Set<Class<?>> configurationClasses = new HashSet<>(100);
+    private final Set<Class<?>> importClasses = new HashSet<>(20);
     private Environment environment;
 
 
@@ -85,10 +84,12 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
                 Class<?> aClass = ClassUtils.getClass(fullClass);
                 if(AnnotationUtils.strengthenIsExist(aClass,Configuration.class)){
                     configurationClasses.add(aClass);
-                    continue;
                 }
                 if(AnnotationUtils.strengthenIsExist(aClass, Component.class)){
                     componentClasses.add(aClass);
+                    if(AnnotationUtils.strengthenIsExist(aClass, Import.class)){
+                        importClasses.add(aClass);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -98,7 +99,7 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
 
     public void initEnvironment(){
         Set<PropertySource> propertySources = new HashSet<>();
-        for (Class<?> aClass : configurationClasses) {
+        for (Class<?> aClass : componentClasses) {
             PropertySource propertySource = AnnotatedElementUtils.findMergedAnnotation(aClass, PropertySource.class);
             if(propertySource != null){
                 propertySources.add(propertySource);
@@ -108,19 +109,13 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
     }
 
     public void loadBeanDefinition(){
-        for (Class<?> configurationClass : configurationClasses) {
-            ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(this, environment, configurationClass);
+        for (Class<?> configurationClass : componentClasses) {
+            ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(this, environment,this, configurationClass);
             if (gr.conditionJudgeByClass()) {
                 List<BeanDefinitionReader.BeanDefinitionPojo> definitions = gr.getBeanDefinitions();
                 for (BeanDefinitionReader.BeanDefinitionPojo pojo : definitions) {
                     registerBeanDefinition(pojo.getBeanName(), pojo.getDefinition());
                 }
-            }
-        }
-        for (Class<?> componentClass : componentClasses) {
-            ComponentBeanDefinitionReader cr = new ComponentBeanDefinitionReader(this,environment,componentClass);
-            if(cr.conditionJudgeByClass()){
-                registerBeanDefinition(cr.getBeanDefinition().getBeanName(),cr.getBeanDefinition().getDefinition());
             }
         }
     }
@@ -137,6 +132,14 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
 
             if(instance instanceof ApplicationContextAware){
                 ((ApplicationContextAware)instance).setApplicationContext(this);
+            }
+
+            if(instance instanceof ResourceLoaderAware){
+                ((ResourceLoaderAware)instance).setResourceLoader(this);
+            }
+
+            if(instance instanceof ClassLoaderAware){
+                ((ClassLoaderAware)instance).setClassLoader(this.getClassLoader());
             }
         }
     }

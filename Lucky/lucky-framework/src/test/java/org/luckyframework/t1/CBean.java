@@ -11,15 +11,16 @@ import org.luckyframework.environment.Environment;
  * @date 2021/3/25 上午12:48
  */
 @Configuration("c")
-//@PropertySource({"classpath:**/*.properties","classpath:**/*.yml"})
+@Import(ABean.class)
+@PropertySource({"classpath:**/*.properties","classpath:**/*.yml"})
 public class CBean {
 
     @Lazy
     @Bean(name = "o1",initMethod = "initMethod",destroyMethod = "destroyMethod")
     public Test01 test01(@Qualifier("myFactoryBean")ABean a, ApplicationContext context,@Value("${java.path}") String path){
-        System.out.println("A -> "+a);
-        System.out.println("ApplicationContext -> "+context);
-        System.out.println("Path -> "+path);
+//        System.out.println("A -> "+a);
+//        System.out.println("ApplicationContext -> "+context);
+//        System.out.println("Path -> "+path);
         return new Test01();
     }
 

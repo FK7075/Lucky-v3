@@ -23,9 +23,9 @@ public class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
         if(!beanDefinition.validate()){
             throw new BeanDefinitionIllegalException(beanName, beanDefinition);
         }
-        if(containsBeanDefinition(beanName)){
-            throw new BeanDefinitionRegisterException("The bean definition information with the name '"+beanName+"' has been registered");
-        }
+//        if(containsBeanDefinition(beanName)){
+//            throw new BeanDefinitionRegisterException("The bean definition information with the name '"+beanName+"' has been registered");
+//        }
         this.beanDefinitionMap.put(beanName,beanDefinition);
     }
 

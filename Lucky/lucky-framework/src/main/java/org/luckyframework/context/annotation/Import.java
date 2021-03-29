@@ -13,5 +13,9 @@ import java.lang.annotation.*;
 @Documented
 public @interface Import {
 
+    /**
+     * {@link Configuration @Configuration}, {@link ImportSelector},
+     * {@link ImportBeanDefinitionRegistrar}, or regular component classes to import.
+     */
     Class<?>[] value();
 }

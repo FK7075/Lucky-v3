@@ -1,8 +1,10 @@
 package org.luckyframework.context;
 
+import com.lucky.utils.base.ArrayUtils;
 import com.lucky.utils.base.Assert;
 import com.lucky.utils.base.BaseUtils;
 import com.lucky.utils.conversion.JavaConversion;
+import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import com.lucky.utils.type.AnnotationMetadata;
@@ -18,6 +20,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,24 +36,35 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
     protected final Component component;
     protected final Environment environment;
     protected final ApplicationContext applicationContext;
+    protected final BeanDefinitionRegistry registry;
+    protected final Class<?>[] importClasses;
 
-    public ComponentBeanDefinitionReader(ApplicationContext context,Environment environment,Class<?> componentClass){
+    public ComponentBeanDefinitionReader(ApplicationContext context,Environment environment,BeanDefinitionRegistry registry,Class<?> componentClass){
         Assert.notNull(componentClass,"class is null");
-        Component component = AnnotatedElementUtils.findMergedAnnotation(componentClass, Component.class);
-//        Assert.notNull(component,"'"+componentClass+"' type is illegal, legal type should be marked by '@org.luckyframework.context.annotation.Component' annotation");
-        this.component=component;
+        this.component=AnnotatedElementUtils.findMergedAnnotation(componentClass, Component.class);
+        if(AnnotationUtils.strengthenIsExist(componentClass, Import.class)){
+            Set<Class<?>> importSet = new HashSet<>();
+            List<Import> imports = AnnotationUtils.strengthenGet(componentClass, Import.class);
+            for (Import anImport : imports) {
+                importSet.addAll(ArrayUtils.arrayToSet(anImport.value()));
+            }
+            this.importClasses = importSet.toArray(new Class<?>[]{});
+        }else{
+            this.importClasses = new Class<?>[]{};
+        }
         this.componentClass=componentClass;
+        this.registry = registry;
         this.environment=environment;
         this.applicationContext = context;
     }
 
-
     protected String getThisBeanName(){
+        String defBeanName = BaseUtils.lowercaseFirstLetter(componentClass.getSimpleName());
         if(component == null){
-            return BaseUtils.lowercaseFirstLetter(componentClass.getSimpleName());
+            return defBeanName;
         }
         return Assert.isBlankString(component.value())
-                ? BaseUtils.lowercaseFirstLetter(componentClass.getSimpleName())
+                ? defBeanName
                 : component.value();
     }
 
@@ -205,11 +219,6 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
         return scope == null ? BeanScope.SINGLETON : scope.value();
     }
 
-    @Override
-    public BeanDefinitionPojo getBeanDefinition() {
-        return new BeanDefinitionPojo(getThisBeanName(),getThisBeanDefinition());
-    }
-
     @SuppressWarnings("all")
     public Object getRealValue(ResolvableType rtype,Value value){
         Class<?> type = rtype.getRawClass();
@@ -331,5 +340,54 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
 
     protected ConditionContext getConditionContext(){
         return new ConditionContextImpl(environment,applicationContext);
+    }
+
+    @Override
+    public List<BeanDefinitionPojo> getBeanDefinitions() {
+        List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
+        if(conditionJudgeByClass()){
+            beanDefinitions.add(new BeanDefinitionPojo(getThisBeanName(),getThisBeanDefinition()));
+            beanDefinitions.addAll(getBeanDefinitionsByImport());
+        }
+        return beanDefinitions;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Collection<? extends BeanDefinitionPojo> getBeanDefinitionsByImport() {
+        List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
+        for (Class<?> importClass :
+                importClasses) {
+            boolean fromImportSelector = ImportSelector.class.isAssignableFrom(importClass);
+            boolean fromImportBeanDefinitionRegistrar = ImportBeanDefinitionRegistrar.class.isAssignableFrom(importClass);
+
+            if(fromImportSelector){
+                beanDefinitions.addAll(getBeanDefinitionsByImportSelector((Class<? extends ImportSelector>) importClass));
+            }
+            if(fromImportBeanDefinitionRegistrar){
+                ImportBeanDefinitionRegistrar importBeanDefinitionRegistrar = (ImportBeanDefinitionRegistrar) ClassUtils.newObject(importClass);
+                applicationContext.setAware(importBeanDefinitionRegistrar);
+                importBeanDefinitionRegistrar.registerBeanDefinitions(AnnotationMetadata.introspect(componentClass),registry);
+            }
+            if(!fromImportSelector && !fromImportBeanDefinitionRegistrar){
+                beanDefinitions.add(new BeanDefinitionPojo(importClass.getName(),new GenericBeanDefinition(importClass)));
+            }
+        }
+        return beanDefinitions;
+    }
+
+    private List<BeanDefinitionPojo> getBeanDefinitionsByImportSelector(Class<? extends ImportSelector> importSelectorClass){
+        List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
+        if(ImportSelector.class.isAssignableFrom(importSelectorClass)){
+            ImportSelector importSelector = ClassUtils.newObject(importSelectorClass);
+            applicationContext.setAware(importSelector);
+            String[] imports = importSelector.selectImports(AnnotationMetadata.introspect(componentClass));
+            Predicate<String> exclusionFilter = importSelector.getExclusionFilter();
+            for (String importClassStr : imports) {
+                if(exclusionFilter != null && exclusionFilter.test(importClassStr)){
+                    beanDefinitions.add(new BeanDefinitionPojo(importClassStr,new GenericBeanDefinition(ClassUtils.getClass(importClassStr))));
+                }
+            }
+        }
+        return beanDefinitions;
     }
 }

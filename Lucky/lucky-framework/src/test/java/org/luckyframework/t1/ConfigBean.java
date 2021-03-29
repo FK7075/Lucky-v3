@@ -3,6 +3,8 @@ package org.luckyframework.t1;
 import org.luckyframework.context.annotation.Bean;
 import org.luckyframework.context.annotation.Conditional;
 import org.luckyframework.context.annotation.Configuration;
+import org.luckyframework.context.annotation.Import;
+import org.luckyframework.impotrBeanDefinitionRegistrar.MyAutoBeanDefinitionRegistrar;
 import org.luckyframework.t1.condition.MacCondition;
 import org.luckyframework.t1.condition.WindowsCondition;
 import org.luckyframework.t1.service.FileCommand;
@@ -15,6 +17,7 @@ import org.luckyframework.t1.service.WindowsFileCommand;
  * @date 2021/3/26 0026 15:31
  */
 @Configuration
+@Import(MyAutoBeanDefinitionRegistrar.class)
 public class ConfigBean {
 
     @Bean

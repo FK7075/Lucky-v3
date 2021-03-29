@@ -1,5 +1,7 @@
 package org.luckyframework.t1.factorybean;
 
+import org.luckyframework.beans.aware.BeanFactoryAware;
+import org.luckyframework.beans.factory.BeanFactory;
 import org.luckyframework.beans.factory.FactoryBean;
 import org.luckyframework.context.annotation.Component;
 import org.luckyframework.t1.ABean;
@@ -10,7 +12,8 @@ import org.luckyframework.t1.ABean;
  * @date 2021/3/27 上午1:29
  */
 @Component
-public class MyFactoryBean implements FactoryBean<ABean> {
+public class MyFactoryBean implements FactoryBean<ABean> , BeanFactoryAware {
+
     @Override
     public ABean getObject() throws Exception {
         ABean a =new ABean();
@@ -24,6 +27,9 @@ public class MyFactoryBean implements FactoryBean<ABean> {
         return ABean.class;
     }
 
-
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) {
+        System.out.println(beanFactory);
+    }
 
 }

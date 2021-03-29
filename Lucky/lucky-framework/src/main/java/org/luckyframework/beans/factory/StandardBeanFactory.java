@@ -66,6 +66,8 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         }
         // 创建bean的实例
         instance = createBeanInstance(name,definition);
+        //如果是FactoryBean则调用getObject方法得到真正的组件
+        instance = factoryBeanProcess(name,definition,instance);
         // 设置Aware
         setAware(instance);
         // 设置属性
@@ -74,7 +76,10 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         doInit(name,instance);
         instance=applyPostProcessAfterInitialization(name,instance);
         inCreationCheckExclusions.remove(name);
-        return factoryBeanProcess(name,definition,instance);
+        if(definition.isSingleton()){
+            addSingletonObject(name,instance);
+        }
+        return instance;
     }
 
 
@@ -83,19 +88,16 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         if(instance instanceof FactoryBean){
             try {
                 FactoryBean<?> factoryBean = (FactoryBean<?>) instance;
+                setAware(factoryBean);
                 Object factoryCreateBean = factoryBean.getObject();
-                if(factoryBean.isSingleton()){
-                    addSingletonObject(name,factoryCreateBean);
-                }else{
+                if(!factoryBean.isSingleton()){
+                    definition.setScope(BeanScope.PROTOTYPE);
                     removerSingletonObject(name);
                 }
                 return factoryCreateBean;
             }catch (Exception e){
                 throw new BeanCreationException(name,"The bean ('"+name+"') being created is a FactoryBean type, but an exception occurs when using this FactoryBean to create an object",e);
             }
-        }
-        if(definition.isSingleton()){
-            addSingletonObject(name,instance);
         }
         return instance;
     }
