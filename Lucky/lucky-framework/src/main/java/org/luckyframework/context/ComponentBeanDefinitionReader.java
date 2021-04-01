@@ -347,13 +347,12 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
         List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
         if(conditionJudgeByClass()){
             beanDefinitions.add(new BeanDefinitionPojo(getThisBeanName(),getThisBeanDefinition()));
-            beanDefinitions.addAll(getBeanDefinitionsByImport());
         }
         return beanDefinitions;
     }
 
     @SuppressWarnings("unchecked")
-    private Collection<? extends BeanDefinitionPojo> getBeanDefinitionsByImport() {
+    public Collection<? extends BeanDefinitionPojo> getBeanDefinitionsByImport() {
         List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
         for (Class<?> importClass :
                 importClasses) {

@@ -19,6 +19,7 @@ import org.luckyframework.environment.Environment;
 import org.luckyframework.exception.LuckyIOException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -109,6 +110,7 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
     }
 
     public void loadBeanDefinition(){
+        List<BeanDefinitionReader.BeanDefinitionPojo> importBeanDefinitions = new ArrayList<>();
         for (Class<?> configurationClass : componentClasses) {
             ConfigurationBeanDefinitionReader gr = new ConfigurationBeanDefinitionReader(this, environment,this, configurationClass);
             if (gr.conditionJudgeByClass()) {
@@ -116,8 +118,10 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
                 for (BeanDefinitionReader.BeanDefinitionPojo pojo : definitions) {
                     registerBeanDefinition(pojo.getBeanName(), pojo.getDefinition());
                 }
+                importBeanDefinitions.addAll(gr.getBeanDefinitionsByImport());
             }
         }
+        importBeanDefinitions.forEach(bd->registerBeanDefinition(bd.getBeanName(),bd.getDefinition()));
     }
 
     @Override
