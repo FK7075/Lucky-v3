@@ -13,4 +13,6 @@ import org.luckyframework.environment.EnvironmentCapable;
 public interface ApplicationContext extends ListableBeanFactory , ResourceLoader, BeanDefinitionRegistry, EnvironmentCapable {
 
     String[] getSingletonObjectNames();
+
+    BasedPackageClassResourceLoader getClassResourceLoader();
 }

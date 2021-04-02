@@ -40,8 +40,7 @@ public interface BeanDefinition extends Cloneable {
     /** 设置是否延迟初始化 */
     void setLazyInit(boolean lazyInit);
 
-    /** 构造器参数
-     * @return*/
+    /** 构造器参数 */
     ConstructorValue[] getConstructorValues();
 
     /** 属性设置参数 */
@@ -67,6 +66,12 @@ public interface BeanDefinition extends Cloneable {
 
     /** 复制*/
     BeanDefinition copy();
+
+    /** 最终返回bean的类型*/
+    Class<?> getFinallyClass();
+
+    /** 设置最终返回bean的类型*/
+    void setFinallyClass(Class<?> finallyClass);
 
 
     default boolean validate(){

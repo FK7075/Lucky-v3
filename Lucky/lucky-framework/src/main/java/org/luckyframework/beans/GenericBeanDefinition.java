@@ -23,6 +23,7 @@ public class GenericBeanDefinition implements BeanDefinition {
     private Method cacheFactoryMethod;
     private Object[] cacheConstructorArgumentRealValues;
     private PropertyValue[] cachePropertyRealValue;
+    private Class<?> finallyClass;
 
     public GenericBeanDefinition() {
     }
@@ -154,6 +155,16 @@ public class GenericBeanDefinition implements BeanDefinition {
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public Class<?> getFinallyClass() {
+        return this.finallyClass;
+    }
+
+    @Override
+    public void setFinallyClass(Class<?> finallyClass) {
+        this.finallyClass = finallyClass;
     }
 
     @Override

@@ -12,6 +12,9 @@
   <modules>
     <module>lucky-bean</module>
       <module>lucky-framework</module>
+      <module>lucky-data</module>
+      <module>../lucky-web</module>
+    <module>lucky-web</module>
   </modules>
 
   <name>lucky</name>

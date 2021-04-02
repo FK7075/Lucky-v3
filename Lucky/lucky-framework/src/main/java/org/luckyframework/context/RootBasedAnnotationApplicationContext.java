@@ -6,6 +6,7 @@ import com.lucky.utils.fileload.Resource;
 import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver;
 import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.ClassUtils;
+import com.lucky.utils.spi.LuckyFactoryLoader;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.BeanPostProcessor;
 import org.luckyframework.beans.aware.*;
@@ -31,19 +32,14 @@ import java.util.Set;
  */
 public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFactory implements ApplicationContext {
 
-    private final static String CLASS_CONF_TEMP = "classpath:%s/**/*.class";
-    private final static int basePackageIndex = RootBasedAnnotationApplicationContext.class.getResource("/").toString().length();
-    private final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-    private final String basePackage;
+    private final BasedPackageClassResourceLoader classResourceLoader;
     private final Set<Class<?>> componentClasses = new HashSet<>(225);
-    private final Set<Class<?>> configurationClasses = new HashSet<>(100);
-    private final Set<Class<?>> importClasses = new HashSet<>(20);
     private Environment environment;
 
 
     public RootBasedAnnotationApplicationContext(String basePackage){
         Assert.notNull(basePackage,"basePackage is null");
-        this.basePackage=basePackage;
+        this.classResourceLoader = new BasedPackageClassResourceLoader(basePackage);
         refresh();
     }
 
@@ -74,27 +70,14 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
     }
 
     private void scanner(){
-        String root = basePackage.replaceAll("\\.", "/");
-        String scanRule=String.format(CLASS_CONF_TEMP,root);
-        try {
-            Resource[] classResources = resolver.getResources(scanRule);
-            for (Resource resource : classResources) {
-                String fullClass = resource.getURL().toString();
-                fullClass = fullClass.substring(basePackageIndex,fullClass.lastIndexOf("."))
-                        .replaceAll("/",".");
-                Class<?> aClass = ClassUtils.getClass(fullClass);
-                if(AnnotationUtils.strengthenIsExist(aClass,Configuration.class)){
-                    configurationClasses.add(aClass);
-                }
-                if(AnnotationUtils.strengthenIsExist(aClass, Component.class)){
-                    componentClasses.add(aClass);
-                    if(AnnotationUtils.strengthenIsExist(aClass, Import.class)){
-                        importClasses.add(aClass);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new LuckyIOException(e);
+        loadComponentByLuckyFactories();
+        componentClasses.addAll(classResourceLoader.getClassesByAnnotationStrengthen(Component.class));
+    }
+
+    private void loadComponentByLuckyFactories() {
+        List<String> factoriesConfigurationNames = LuckyFactoryLoader.loadFactoryNames(Configuration.class, getClassLoader());
+        for (String configurationName : factoriesConfigurationNames) {
+            componentClasses.add(ClassUtils.getClass(configurationName));
         }
     }
 
@@ -156,11 +139,16 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
     @Nullable
     @Override
     public ClassLoader getClassLoader() {
-        return resolver.getClassLoader();
+        return classResourceLoader.getClassLoader();
     }
 
     @Override
     public Resource getResource(String location) {
-        return resolver.getResource(location);
+        return classResourceLoader.getResource(location);
+    }
+
+    @Override
+    public BasedPackageClassResourceLoader getClassResourceLoader() {
+        return classResourceLoader;
     }
 }

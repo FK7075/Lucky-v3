@@ -468,29 +468,36 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         if(beanType == null){
             BeanDefinition definition = getBeanDefinition(name);
             Assert.notNull(definition,"Cannot find the bean definition information with the name '"+name+"'");
-            Class<?> beanClass = definition.getBeanClass();
-            String factoryBeanName = definition.getFactoryBeanName();
-            String factoryMethodName = definition.getFactoryMethodName();
-            if(beanClass != null){
 
-                //构造器
-                if(Assert.isBlankString(factoryBeanName) && Assert.isBlankString(factoryMethodName)){
-                    beanType = beanClass;
+            Class<?> finallyClass = definition.getFinallyClass();
+            if(finallyClass != null){
+                beanType = finallyClass;
+            }
+            else{
+                Class<?> beanClass = definition.getBeanClass();
+                String factoryBeanName = definition.getFactoryBeanName();
+                String factoryMethodName = definition.getFactoryMethodName();
+                if(beanClass != null){
+
+                    //构造器
+                    if(Assert.isBlankString(factoryBeanName) && Assert.isBlankString(factoryMethodName)){
+                        beanType = beanClass;
+                    }
+                    //静态工厂方法
+                    else if(!Assert.isBlankString(factoryMethodName)){
+                        Method method = getMethod(beanClass, factoryMethodName, definition.getConstructorValues());
+                        //"There is no corresponding method"
+                        Assert.notNull(method,"No static factory method matching the name '"+factoryMethodName+"' was found "+definition);
+                        beanType = method.getReturnType();
+                    }
                 }
-                //静态工厂方法
-                else if(!Assert.isBlankString(factoryMethodName)){
-                    Method method = getMethod(beanClass, factoryMethodName, definition.getConstructorValues());
-                    //"There is no corresponding method"
-                    Assert.notNull(method,"No static factory method matching the name '"+factoryMethodName+"' was found "+definition);
+                //工厂方法
+                else{
+                    Class<?> factoryBeanClass = getType(factoryBeanName);
+                    Method method = getMethod(factoryBeanClass, factoryMethodName, definition.getConstructorValues());
+                    Assert.notNull(method, "No factory method matching the name '"+factoryMethodName+"' was found "+definition);
                     beanType = method.getReturnType();
                 }
-            }
-            //工厂方法
-            else{
-                Class<?> factoryBeanClass = getType(factoryBeanName);
-                Method method = getMethod(factoryBeanClass, factoryMethodName, definition.getConstructorValues());
-                Assert.notNull(method, "No factory method matching the name '"+factoryMethodName+"' was found "+definition);
-                beanType = method.getReturnType();
             }
 
             //是一个工厂bean
