@@ -68,10 +68,10 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         instance = createBeanInstance(name,definition);
         //如果是FactoryBean则调用getObject方法得到真正的组件
         instance = factoryBeanProcess(name,definition,instance);
-        // 设置Aware
-        setAware(instance);
         // 设置属性
         populateBean(name,instance);
+        // 设置Aware
+        setAware(instance);
         instance=applyPostProcessBeforeInitialization(name,instance);
         doInit(name,instance);
         instance=applyPostProcessAfterInitialization(name,instance);

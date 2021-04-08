@@ -1,36 +1,40 @@
-package org.jacklamb.lucky.aop.proxy;
+package org.luckyframework.aop.proxy;
 
-import com.lucky.utils.reflect.ClassUtils;
 import com.lucky.utils.reflect.MethodUtils;
-import org.aspectj.lang.JoinPoint;
-import org.jacklamb.lucky.aop.advice.*;
+import org.luckyframework.aop.advice.*;
 
 import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * 将增强组成执行链
  * @author fk
  * @version 1.0
- * @date 2021/3/18 0018 15:30
+ * @date 2021/4/7 0007 14:06
  */
-public class  AopAdviceChainInvocation {
+public class AopAdviceChainInvocation {
 
-    private static Method invokeMethod = MethodUtils.getMethod(AopAdviceChainInvocation.class,"invoke");
-    private Object proxy;
+    private static final Method INVOKE_METHOD = MethodUtils.getMethod(AopAdviceChainInvocation.class,"invoke");
     private final Object target;
-    private final Method method;
+    private final Object proxy;
     private Object[] args;
-    private final List<Object> advices;
+    private final Method method;
+    private final List<Advice> advices;
     private int index = 0;
-    private final JoinPoint joinPoint;
 
-    public void setArgument(Object[] args){
-        this.args=args;
+    public AopAdviceChainInvocation(Object proxy,Object target, Method method, Object[] args, List<Advice> advices) {
+        this.proxy = proxy;
+        this.target = target;
+        this.method = method;
+        this.advices = advices;
+        this.args = args;
     }
 
     public Object getProxy() {
         return proxy;
+    }
+
+    public Object[] getArgs() {
+        return args;
     }
 
     public Object getTarget() {
@@ -41,25 +45,20 @@ public class  AopAdviceChainInvocation {
         return method;
     }
 
-    public Object[] getArgs() {
-        return args;
+    public List<Advice> getAdvices() {
+        return advices;
     }
 
-    public AopAdviceChainInvocation(Object proxy, Object target, Method method, Object[] args, List<Object> advices) {
-        this.proxy = proxy;
-        this.target = target;
-        this.method = method;
+    public void setArgs(Object[] args) {
         this.args = args;
-        this.advices = advices;
-        joinPoint = new MethodInterceptorJoinPoint(this);
     }
 
     public Object invoke(){
         if(index<this.advices.size()){
             Object advice = advices.get(index++);
             //前置增加
-            if(advice instanceof MethodBeforeAdvice){
-                ((MethodBeforeAdvice)advice).before();
+            if(advice instanceof BeforeAdvice){
+                ((BeforeAdvice)advice).before();
             }
             //正常执行的后置增强
             else if(advice instanceof AfterReturningAdvice){
@@ -77,16 +76,16 @@ public class  AopAdviceChainInvocation {
             }
 
             //后置增强
-            else if(advice instanceof MethodAfterAdvice){
+            else if(advice instanceof AfterAdvice){
                 try {
                     return this.invoke();
                 }finally {
-                    ((MethodAfterAdvice)advice).after();
+                    ((AfterAdvice)advice).after();
                 }
             }
             //环绕增强
             else if(advice instanceof MethodInterceptor){
-                return ((MethodInterceptor)advice).invoke(this,invokeMethod,null);
+                return ((MethodInterceptor)advice).invoke(this,INVOKE_METHOD,null);
             }
             return this.invoke();
         }else{
