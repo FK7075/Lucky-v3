@@ -1,5 +1,7 @@
 package org.luckyframework.aop.advice;
 
+import org.aspectj.lang.JoinPoint;
+
 /**
  * @author fk
  * @version 1.0
@@ -7,5 +9,5 @@ package org.luckyframework.aop.advice;
  */
 public interface BeforeAdvice extends Advice {
 
-    void before();
+    void before(JoinPoint joinPoint);
 }

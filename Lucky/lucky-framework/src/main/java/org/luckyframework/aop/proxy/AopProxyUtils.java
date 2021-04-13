@@ -17,7 +17,7 @@ import java.util.List;
 public class AopProxyUtils {
 
     public static Object applyAdvices(Object proxy, Object target, Method method,Object[] args,
-                                      List<Advisor> matchAdvisor){
+                                      List<Advisor> matchAdvisor) throws Throwable{
         List<Advice> advices = getShouldApplyAdvices(target.getClass(),method,args,matchAdvisor);
         if(Assert.isEmptyCollection(advices)){
             return MethodUtils.invoke(target,method,args);

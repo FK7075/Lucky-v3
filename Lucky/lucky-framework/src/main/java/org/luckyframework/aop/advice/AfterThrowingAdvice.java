@@ -1,5 +1,7 @@
 package org.luckyframework.aop.advice;
 
+import org.aspectj.lang.JoinPoint;
+
 /**
  * @author fk
  * @version 1.0
@@ -7,6 +9,6 @@ package org.luckyframework.aop.advice;
  */
 public interface AfterThrowingAdvice extends Advice {
 
-    void afterThrowing(Throwable e);
+    void afterThrowing(JoinPoint joinPoint,Throwable e);
 
 }

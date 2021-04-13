@@ -1,6 +1,8 @@
 package org.luckyframework.aop.proxy;
 
 import com.lucky.utils.reflect.MethodUtils;
+import org.aspectj.lang.JoinPoint;
+import org.luckyframework.aop.MethodInterceptorJoinPoint;
 import org.luckyframework.aop.advice.*;
 
 import java.lang.reflect.Method;
@@ -13,7 +15,7 @@ import java.util.List;
  */
 public class AopAdviceChainInvocation {
 
-    private static final Method INVOKE_METHOD = MethodUtils.getMethod(AopAdviceChainInvocation.class,"invoke");
+    private final MethodInterceptorJoinPoint joinPoint;
     private final Object target;
     private final Object proxy;
     private Object[] args;
@@ -27,6 +29,7 @@ public class AopAdviceChainInvocation {
         this.method = method;
         this.advices = advices;
         this.args = args;
+        this.joinPoint = new MethodInterceptorJoinPoint(this);
     }
 
     public Object getProxy() {
@@ -53,17 +56,17 @@ public class AopAdviceChainInvocation {
         this.args = args;
     }
 
-    public Object invoke(){
+    public Object invoke() throws Throwable{
         if(index<this.advices.size()){
             Object advice = advices.get(index++);
             //前置增加
             if(advice instanceof BeforeAdvice){
-                ((BeforeAdvice)advice).before();
+                ((BeforeAdvice)advice).before(joinPoint);
             }
             //正常执行的后置增强
             else if(advice instanceof AfterReturningAdvice){
                 Object result = this.invoke();
-                ((AfterReturningAdvice)advice).afterReturning(result);
+                ((AfterReturningAdvice)advice).afterReturning(joinPoint,result);
                 return result;
             }
             //执行异常的后置增强
@@ -71,7 +74,7 @@ public class AopAdviceChainInvocation {
                 try {
                     return this.invoke();
                 }catch (Throwable e){
-                    ((AfterThrowingAdvice)advice).afterThrowing(e);
+                    ((AfterThrowingAdvice)advice).afterThrowing(joinPoint,e);
                 }
             }
 
@@ -80,12 +83,12 @@ public class AopAdviceChainInvocation {
                 try {
                     return this.invoke();
                 }finally {
-                    ((AfterAdvice)advice).after();
+                    ((AfterAdvice)advice).after(joinPoint);
                 }
             }
             //环绕增强
             else if(advice instanceof MethodInterceptor){
-                return ((MethodInterceptor)advice).invoke(this,INVOKE_METHOD,null);
+                return ((MethodInterceptor)advice).invoke(joinPoint);
             }
             return this.invoke();
         }else{

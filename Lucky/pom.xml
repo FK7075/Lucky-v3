@@ -13,6 +13,7 @@
     <module>lucky-bean</module>
     <module>lucky-framework</module>
     <module>lucky-data</module>
+      <module>lucky-aop</module>
   </modules>
 
   <name>lucky</name>

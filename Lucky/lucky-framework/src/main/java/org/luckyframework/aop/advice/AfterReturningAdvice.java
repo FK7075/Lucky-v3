@@ -1,5 +1,7 @@
 package org.luckyframework.aop.advice;
 
+import org.aspectj.lang.JoinPoint;
+
 /**
  * 正常执行后的后置增强通知
  * @author fk
@@ -8,6 +10,6 @@ package org.luckyframework.aop.advice;
  */
 public interface AfterReturningAdvice extends Advice {
 
-    void afterReturning(Object returning);
+    void afterReturning(JoinPoint joinPoint,Object returning);
 
 }

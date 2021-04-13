@@ -2,7 +2,6 @@ package org.luckyframework.context;
 
 import com.lucky.utils.base.ArrayUtils;
 import com.lucky.utils.base.Assert;
-import com.lucky.utils.base.BaseUtils;
 import com.lucky.utils.conversion.JavaConversion;
 import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.ClassUtils;
@@ -33,7 +32,6 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
 
 
     protected final Class<?> componentClass;
-    protected final Component component;
     protected final Environment environment;
     protected final ApplicationContext applicationContext;
     protected final BeanDefinitionRegistry registry;
@@ -41,7 +39,6 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
 
     public ComponentBeanDefinitionReader(ApplicationContext context,Environment environment,BeanDefinitionRegistry registry,Class<?> componentClass){
         Assert.notNull(componentClass,"class is null");
-        this.component=AnnotatedElementUtils.findMergedAnnotation(componentClass, Component.class);
         if(AnnotationUtils.strengthenIsExist(componentClass, Import.class)){
             Set<Class<?>> importSet = new HashSet<>();
             List<Import> imports = AnnotationUtils.strengthenGet(componentClass, Import.class);
@@ -59,13 +56,7 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
     }
 
     protected String getThisBeanName(){
-        String defBeanName = BaseUtils.lowercaseFirstLetter(componentClass.getSimpleName());
-        if(component == null){
-            return defBeanName;
-        }
-        return Assert.isBlankString(component.value())
-                ? defBeanName
-                : component.value();
+        return Namer.getBeanName(componentClass);
     }
 
     protected BeanDefinition getThisBeanDefinition(){

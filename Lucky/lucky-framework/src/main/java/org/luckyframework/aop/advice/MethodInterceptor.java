@@ -1,6 +1,6 @@
 package org.luckyframework.aop.advice;
 
-import java.lang.reflect.Method;
+import org.aspectj.lang.ProceedingJoinPoint;
 
 /**
  * @author fk
@@ -9,6 +9,6 @@ import java.lang.reflect.Method;
  */
 public interface MethodInterceptor extends Advice {
 
-    Object invoke(Object target,Method method,Object[] args);
+    Object invoke(ProceedingJoinPoint joinPoint) throws Throwable;
 
 }

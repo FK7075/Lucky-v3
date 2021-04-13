@@ -167,8 +167,4 @@ public class GenericBeanDefinition implements BeanDefinition {
         this.finallyClass = finallyClass;
     }
 
-    @Override
-    public Object clone() throws CloneNotSupportedException {
-        return super.clone();
-    }
 }

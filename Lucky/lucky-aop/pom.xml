@@ -10,29 +10,29 @@
     <version>1.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>lucky-framework</artifactId>
-  <name>lucky-framework</name>
+  <artifactId>lucky-aop</artifactId>
+  <name>lucky-aop</name>
   <url>https://github.com/FK7075/Lucky-v3</url>
 
   <dependencies>
-
     <dependency>
-      <groupId>com.lucky.jacklamb</groupId>
-      <artifactId>lucky-junit</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
     </dependency>
 
     <dependency>
-      <groupId>com.lucky.jacklamb</groupId>
-      <artifactId>lucky-utils</artifactId>
+      <groupId>org.jacklamb.lucky</groupId>
+      <artifactId>lucky-framework</artifactId>
       <version>1.0-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjweaver</artifactId>
       <version>1.9.6</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 
