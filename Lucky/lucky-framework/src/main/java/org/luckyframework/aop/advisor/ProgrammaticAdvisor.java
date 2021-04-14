@@ -3,6 +3,9 @@ package org.luckyframework.aop.advisor;
 import org.luckyframework.aop.advice.Advice;
 import org.luckyframework.aop.advice.MethodInterceptor;
 import org.luckyframework.aop.pointcut.Pointcut;
+import org.luckyframework.beans.Ordered;
+import org.luckyframework.beans.PriorityOrdered;
+import org.luckyframework.context.annotation.Order;
 
 /**
  * 编程式的切面
@@ -30,5 +33,10 @@ public interface ProgrammaticAdvisor extends Advisor, Pointcut, MethodIntercepto
     @Override
     default void setPointcut(Pointcut pointcut) {
         //不做任何事情
+    }
+
+    @Override
+    default int priority() {
+        return Ordered.getPriority(this);
     }
 }

@@ -2,6 +2,9 @@ package org.luckyframework.aop.advisor;
 
 import org.luckyframework.aop.advice.Advice;
 import org.luckyframework.aop.pointcut.Pointcut;
+import org.luckyframework.beans.Ordered;
+import org.luckyframework.beans.PriorityOrdered;
+import org.luckyframework.context.annotation.Order;
 
 /**
  * 切面，用于组织Advice和Pointcut
@@ -18,5 +21,7 @@ public interface Advisor {
     Pointcut getPointcut();
 
     void setPointcut(Pointcut pointcut);
+
+    int priority();
 
 }

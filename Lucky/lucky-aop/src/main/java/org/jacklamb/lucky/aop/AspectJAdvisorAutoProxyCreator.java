@@ -17,8 +17,11 @@ import org.luckyframework.aop.exception.AopParamsConfigurationException;
 import org.luckyframework.aop.pointcut.Pointcut;
 import org.luckyframework.aop.proxy.ProxyFactory;
 import org.luckyframework.beans.BeanPostProcessor;
+import org.luckyframework.beans.Ordered;
+import org.luckyframework.beans.PriorityOrdered;
 import org.luckyframework.beans.aware.ApplicationContextAware;
 import org.luckyframework.context.ApplicationContext;
+import org.luckyframework.context.annotation.Order;
 import org.luckyframework.exception.LuckyIOException;
 
 import java.io.IOException;
@@ -37,14 +40,14 @@ import static org.jacklamb.lucky.aop.aspectj.ExpressionGlobalPointcutManagement.
  * @version 1.0
  * @date 2021/4/13 0013 11:13
  */
-public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, ApplicationContextAware {
+public class AspectJAdvisorAutoProxyCreator implements BeanPostProcessor, ApplicationContextAware {
 
     private final static Class<?> JOIN_POINT_TYPE = JoinPoint.class;
     private final ExpressionGlobalPointcutManagement pointcutManagement;
     private final List<Advisor> advisors = new ArrayList<>(32);
     private ApplicationContext applicationContext;
 
-    public AspectjAdvisorAutoProxyCreator(){
+    public AspectJAdvisorAutoProxyCreator(){
         pointcutManagement = new AspectJExpressionGlobalPointcutManagement();
     }
 
@@ -117,26 +120,28 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
         String[] aspectBeanNames = applicationContext.getBeanNamesForAnnotation(Aspect.class);
         for (String aspectBeanName : aspectBeanNames) {
             Class<?> aspectClass = applicationContext.getType(aspectBeanName);
+            Object aspectBean = applicationContext.getBean(aspectBeanName);
+            int aspectBeanPriority = Ordered.getPriority(aspectBean);
             List<Method> allMethods = ClassUtils.getAllMethodForClass(aspectClass);
             for (Method method : allMethods) {
                 if(method.isAnnotationPresent(Around.class)){
-                    registryAroundAdvisor(aspectBeanName,method);
+                    registryAroundAdvisor(aspectBeanName,method,aspectBeanPriority);
                     continue;
                 }
                 if(method.isAnnotationPresent(After.class)){
-                    registryAfterAdvisor(aspectBeanName,method);
+                    registryAfterAdvisor(aspectBeanName,method,aspectBeanPriority);
                     continue;
                 }
                 if(method.isAnnotationPresent(AfterThrowing.class)){
-                    registryAfterThrowingAdvisor(aspectBeanName,method);
+                    registryAfterThrowingAdvisor(aspectBeanName,method,aspectBeanPriority);
                     continue;
                 }
                 if(method.isAnnotationPresent(AfterReturning.class)){
-                    registryAfterReturningAdvisor(aspectBeanName,method);
+                    registryAfterReturningAdvisor(aspectBeanName,method,aspectBeanPriority);
                     continue;
                 }
                 if(method.isAnnotationPresent(Before.class)){
-                    registryBeforeAdvisor(aspectBeanName,method);
+                    registryBeforeAdvisor(aspectBeanName,method,aspectBeanPriority);
                 }
             }
         }
@@ -151,7 +156,7 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
     }
 
     // 注册前置增强 @Before
-    private void registryBeforeAdvisor(String aspectBeanName, Method beforeMethod){
+    private void registryBeforeAdvisor(String aspectBeanName, Method beforeMethod,int aspectClassPriority){
         Parameter[] parameters = beforeMethod.getParameters();
         if(parameters.length == 1 && !parameters[0].getType().equals(JOIN_POINT_TYPE)){
             throw new AopParamsConfigurationException("The after-advice parameter configuration is incorrect. The method can have no parameters or one parameter, and the type of the parameter must be 'org.aspectj.lang.JoinPoint'. Error location:'"+beforeMethod+"'");
@@ -168,11 +173,11 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
             }
             MethodUtils.invoke(aspectBean,beforeMethod,aspectMethodRunningArgs);
         };
-        registryAdvisor(new DefaultAdvisor(advice,pointcut));
+        registryAdvisor(new DefaultAdvisor(advice,pointcut,getPriority(aspectClassPriority,beforeMethod)));
     }
 
     // 注册后置增强 @After
-    private void registryAfterAdvisor(String aspectBeanName, Method afterMethod){
+    private void registryAfterAdvisor(String aspectBeanName, Method afterMethod,int aspectClassPriority){
         Parameter[] parameters = afterMethod.getParameters();
         if(parameters.length ==1 && !parameters[0].getType().equals(JOIN_POINT_TYPE)){
             throw new AopParamsConfigurationException("The after-advice parameter configuration is incorrect. The method can have no parameters or one parameter, and the type of the parameter must be 'org.aspectj.lang.JoinPoint'. Error location:'"+afterMethod+"'");
@@ -189,11 +194,11 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
             }
             MethodUtils.invoke(aspectBean,afterMethod,aspectMethodRunningArgs);
         };
-        registryAdvisor(new DefaultAdvisor(advice,pointcut));
+        registryAdvisor(new DefaultAdvisor(advice,pointcut,getPriority(aspectClassPriority,afterMethod)));
     }
 
     // 注册后置增强 @AfterReturning
-    private void registryAfterReturningAdvisor(String aspectBeanName, Method afterReturningMethod) throws IOException {
+    private void registryAfterReturningAdvisor(String aspectBeanName, Method afterReturningMethod,int aspectClassPriority) throws IOException {
         AfterReturning afterReturning = afterReturningMethod.getAnnotation(AfterReturning.class);
         String resultName = afterReturning.returning();
         returningAndThrowingParamCheck("AfterReturning",resultName,afterReturningMethod);
@@ -219,11 +224,11 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
             }
             MethodUtils.invoke(aspectBean,afterReturningMethod,aspectMethodRunningArgs);
         };
-        registryAdvisor(new DefaultAdvisor(advice,pointcut));
+        registryAdvisor(new DefaultAdvisor(advice,pointcut,getPriority(aspectClassPriority,afterReturningMethod)));
     }
 
     // 注册后置增强 @AfterThrowing
-    private void registryAfterThrowingAdvisor(String aspectBeanName, Method afterThrowingMethod) throws IOException {
+    private void registryAfterThrowingAdvisor(String aspectBeanName, Method afterThrowingMethod,int aspectClassPriority) throws IOException {
         AfterThrowing afterThrowing = afterThrowingMethod.getAnnotation(AfterThrowing.class);
         String resultName = afterThrowing.throwing();
         returningAndThrowingParamCheck("AfterThrowing",resultName,afterThrowingMethod);
@@ -249,11 +254,11 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
             }
             MethodUtils.invoke(aspectBean,afterThrowingMethod,aspectMethodRunningArgs);
         };
-        registryAdvisor(new DefaultAdvisor(advice,pointcut));
+        registryAdvisor(new DefaultAdvisor(advice,pointcut,getPriority(aspectClassPriority,afterThrowingMethod)));
     }
 
     // 注册后置增强 @Around
-    private void registryAroundAdvisor(String aspectBeanName, Method aroundMethod){
+    private void registryAroundAdvisor(String aspectBeanName, Method aroundMethod,int aspectClassPriority){
         Parameter[] parameters = aroundMethod.getParameters();
         if(parameters.length == 1 && !JOIN_POINT_TYPE.isAssignableFrom(parameters[0].getType())){
             throw new AopParamsConfigurationException("The around-advice parameter configuration is incorrect. The method can have no parameters or one parameter, and the type of the parameter must be 'org.aspectj.lang.JoinPoint'. Error location:'"+aroundMethod+"'");
@@ -273,7 +278,7 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
             }
             return MethodUtils.invoke(aspectBean,aroundMethod,aspectMethodRunningArgs);
         };
-        registryAdvisor(new DefaultAdvisor(advice,pointcut));
+        registryAdvisor(new DefaultAdvisor(advice,pointcut,getPriority(aspectClassPriority,aroundMethod)));
     }
 
     /*
@@ -292,6 +297,7 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
         return null;
     }
 
+    //todo 检验逻辑还未编写
     private void returningAndThrowingParamCheck(String type,String rt,Method method){
         Parameter[] parameters = method.getParameters();
         if("AfterReturning".equals(type)){
@@ -309,6 +315,13 @@ public class AspectjAdvisorAutoProxyCreator implements BeanPostProcessor, Applic
             return paramLength == 0 || paramLength == 1 || paramLength ==2;
         }
         return paramLength == 0 || paramLength == 1;
+    }
+
+
+
+    private int getPriority(int classPriority,Method aspectMethod){
+        Order order = aspectMethod.getAnnotation(Order.class);
+        return order == null ? classPriority : order.value();
     }
 
 

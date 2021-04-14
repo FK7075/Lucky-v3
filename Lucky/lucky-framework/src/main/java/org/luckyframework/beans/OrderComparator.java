@@ -2,6 +2,7 @@ package org.luckyframework.beans;
 
 import com.lucky.utils.annotation.Nullable;
 import com.lucky.utils.reflect.ObjectUtils;
+import org.luckyframework.context.annotation.Order;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -104,7 +105,11 @@ public class OrderComparator implements Comparator<Object> {
      */
     @Nullable
     protected Integer findOrder(Object obj) {
-        return (obj instanceof Ordered ? ((Ordered) obj).getOrder() : null);
+        if(obj instanceof Ordered){
+            return ((Ordered) obj).getOrder();
+        }
+        Order order = obj.getClass().getAnnotation(Order.class);
+        return order!=null?order.value():null;
     }
 
     /**

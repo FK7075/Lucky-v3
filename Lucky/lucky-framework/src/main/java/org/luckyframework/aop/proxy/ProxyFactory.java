@@ -3,9 +3,12 @@ package org.luckyframework.aop.proxy;
 import com.lucky.utils.base.Assert;
 import org.luckyframework.aop.advisor.Advisor;
 import org.luckyframework.aop.advisor.AdvisorRegistry;
+import org.luckyframework.beans.OrderComparator;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author fk
@@ -44,6 +47,8 @@ public class ProxyFactory implements AdvisorRegistry {
     }
 
     private AopProxy createAopProxy(Object target,List<Advisor> matchAdvisors) {
+        matchAdvisors = matchAdvisors.stream().sorted(Comparator.comparingInt(Advisor::priority)).collect(Collectors.toList());
+        OrderComparator.sort(matchAdvisors);
         // 是该用jdk动态代理还是cglib？
         if (shouldUseJDKDynamicProxy(target)) {
             return new JdkDynamicAopProxy(target, matchAdvisors);

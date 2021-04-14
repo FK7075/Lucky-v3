@@ -1,5 +1,7 @@
 package org.luckyframework.beans;
 
+import org.luckyframework.context.annotation.Order;
+
 /**
  * @author fk
  * @version 1.0
@@ -33,4 +35,15 @@ public interface Ordered {
      * @see #LOWEST_PRECEDENCE
      */
     int getOrder();
+
+    static int getPriority(Object bean){
+        if(bean instanceof PriorityOrdered){
+            return ((PriorityOrdered) bean).getOrder();
+        }
+        if(bean instanceof Ordered){
+            return ((Ordered)bean).getOrder();
+        }
+        Order order = bean.getClass().getAnnotation(Order.class);
+        return order == null ? Ordered.LOWEST_PRECEDENCE : order.value();
+    }
 }

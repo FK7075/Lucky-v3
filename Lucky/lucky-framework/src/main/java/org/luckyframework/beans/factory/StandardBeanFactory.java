@@ -662,6 +662,7 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
 
     @Override
     public List<BeanPostProcessor> getBeanPostProcessors() {
+        OrderComparator.sort(beanPostProcessors);
         return beanPostProcessors;
     }
 
