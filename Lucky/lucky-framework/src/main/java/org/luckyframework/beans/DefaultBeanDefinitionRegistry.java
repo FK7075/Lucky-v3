@@ -4,6 +4,7 @@ import com.lucky.utils.base.Assert;
 import org.luckyframework.exception.BeanDefinitionIllegalException;
 import org.luckyframework.exception.BeanDefinitionRegisterException;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,4 +55,8 @@ public class DefaultBeanDefinitionRegistry implements BeanDefinitionRegistry {
         return this.beanDefinitionMap.keySet().toArray(new String[0]);
     }
 
+    @Override
+    public Collection<BeanDefinition> getBeanDefinitions() {
+        return this.beanDefinitionMap.values();
+    }
 }

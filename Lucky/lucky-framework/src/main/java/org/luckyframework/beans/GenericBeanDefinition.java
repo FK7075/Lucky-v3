@@ -15,6 +15,7 @@ public class GenericBeanDefinition implements BeanDefinition {
     private String factoryMethodName;
     private BeanScope beanScope = BeanScope.SINGLETON;
     private boolean lazyInit = false;
+    private boolean isPrimary = false;
     private ConstructorValue[] constructorValues;
     private PropertyValue[] propertyValues;
     private String initMethodName;
@@ -24,6 +25,8 @@ public class GenericBeanDefinition implements BeanDefinition {
     private Object[] cacheConstructorArgumentRealValues;
     private PropertyValue[] cachePropertyRealValue;
     private Class<?> finallyClass;
+    private String[] dependsOn = new String[0];
+    private int primary = Ordered.LOWEST_PRECEDENCE;
 
     public GenericBeanDefinition() {
     }
@@ -165,6 +168,36 @@ public class GenericBeanDefinition implements BeanDefinition {
     @Override
     public void setFinallyClass(Class<?> finallyClass) {
         this.finallyClass = finallyClass;
+    }
+
+    @Override
+    public void setPrimary(boolean primary) {
+        this.isPrimary = primary;
+    }
+
+    @Override
+    public boolean isPrimary() {
+        return this.isPrimary;
+    }
+
+    @Override
+    public String[] getDependsOn() {
+        return this.dependsOn;
+    }
+
+    @Override
+    public void setDependsOn(String[] depends) {
+        this.dependsOn = depends;
+    }
+
+    @Override
+    public int getPriority() {
+        return primary;
+    }
+
+    @Override
+    public void setPriority(int priority) {
+        this.primary = priority;
     }
 
 }

@@ -33,7 +33,7 @@ public class AspectJExpressionPointcut extends AbstractExpressionPointcut {
 
     @Override
     public boolean matchMethod(Class<?> targetClass, Method method, Object... args) {
-        ShadowMatch sm = pe.matchesAdviceExecution(method);
+        ShadowMatch sm = pe.matchesMethodExecution(method);
         return sm.alwaysMatches();
     }
 }

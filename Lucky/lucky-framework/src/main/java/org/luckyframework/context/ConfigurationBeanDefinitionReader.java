@@ -45,11 +45,22 @@ public class ConfigurationBeanDefinitionReader extends ComponentBeanDefinitionRe
             bd.setFactoryBeanName(getThisBeanName());
             bd.setFactoryMethodName(method.getName());
             bd.setConstructorValues(getConstructorValues(method));
+            bd.setPrimary(method.isAnnotationPresent(Primary.class));
             if(!Assert.isBlankString(beanAnn.initMethod())){
                 bd.setInitMethodName(beanAnn.initMethod());
             }
             if(!Assert.isBlankString(beanAnn.destroyMethod())){
                 bd.setDestroyMethodName(beanAnn.destroyMethod());
+            }
+
+            Order order = method.getAnnotation(Order.class);
+            if(order != null){
+                bd.setPriority(order.value());
+            }
+
+            DependsOn dependsOn = method.getAnnotation(DependsOn.class);
+            if(dependsOn != null){
+                bd.setDependsOn(dependsOn.value());
             }
             Lazy lazy = method.getAnnotation(Lazy.class);
             if(lazy != null){

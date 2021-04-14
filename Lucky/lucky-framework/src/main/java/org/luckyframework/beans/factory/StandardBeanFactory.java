@@ -40,6 +40,12 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
 
     //获取bean的实例
     protected Object doGetBean(String name) {
+        String[] dependsOn = getBeanDefinition(name).getDependsOn();
+        for (String depend : dependsOn) {
+            if(!singletonObjects.containsKey(depend)){
+                doGetBean(depend);
+            }
+        }
         Object bean = singletonObjects.get(name);
         if(bean == null){
             BeanDefinition definition = getBeanDefinition(name);
@@ -419,6 +425,16 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
                     }
                     return null;
                 }
+                List<String> primaryBeanName = new ArrayList<>();
+                for (String name : forType) {
+                    if(getBeanDefinition(name).isPrimary()){
+                        primaryBeanName.add(name);
+                    }
+                }
+                if(primaryBeanName.size() == 1){
+                    return getBean(primaryBeanName.get(0));
+                }
+
                 if(ArrayUtils.containStr(forType,beanReference.getBeanName())){
                     return this.getBean(beanReference.getBeanName());
                 }

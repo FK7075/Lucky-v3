@@ -6,6 +6,7 @@ import com.lucky.utils.reflect.AnnotationUtils;
 import com.lucky.utils.reflect.MethodUtils;
 import com.lucky.utils.type.AnnotatedElementUtils;
 import org.luckyframework.beans.BeanDefinition;
+import org.luckyframework.beans.SupportSortObject;
 import org.luckyframework.beans.aware.Aware;
 import org.luckyframework.beans.aware.BeanFactoryAware;
 import org.luckyframework.beans.aware.ClassLoaderAware;
@@ -18,6 +19,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * @author fk
@@ -31,7 +33,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
     // 注解与名称的映射
     private final Map<Class<? extends Annotation>,String[]> forAnnotationNamesMap = new ConcurrentHashMap<>(16);
     // 所有单例bean的名称
-    private Set<String> singletonBeanNames;
+    private List<String> singletonBeanNames;
 
     /**
      * 实例化所有的单例bean
@@ -54,13 +56,14 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
      */
     public String[] getSingletonBeanNames(){
         if(singletonBeanNames == null){
-            singletonBeanNames = new HashSet<>(225);
+            List<SupportSortObject<String>>  sortNames = new ArrayList<>(225);
             for (String definitionName : getBeanDefinitionNames()) {
                 BeanDefinition definition = getBeanDefinition(definitionName);
                 if(definition.isSingleton() ){
-                    singletonBeanNames.add(definitionName);
+                    sortNames.add(new SupportSortObject<>(definition.getPriority(),definitionName));
                 }
             }
+            singletonBeanNames=sortNames.stream().sorted(Comparator.comparingInt(SupportSortObject::getPriority)).map(SupportSortObject::getObject).collect(Collectors.toList());
         }
         return singletonBeanNames.toArray(EMPTY_STRING_ARRAY);
     }

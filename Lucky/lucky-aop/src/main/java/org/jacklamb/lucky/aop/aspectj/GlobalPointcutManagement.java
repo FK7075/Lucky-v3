@@ -2,7 +2,7 @@ package org.jacklamb.lucky.aop.aspectj;
 
 import org.luckyframework.aop.pointcut.Pointcut;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * @author fk
@@ -13,5 +13,5 @@ public interface GlobalPointcutManagement {
 
     void addPointcut(Pointcut pointcut);
 
-    List<Pointcut> getAllPointcut();
+    Collection<?extends Pointcut> getAllPointcut();
 }

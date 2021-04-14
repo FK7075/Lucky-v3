@@ -64,14 +64,32 @@ public interface BeanDefinition extends Cloneable {
     /** 是否为原型 */
     boolean isPrototype();
 
-    /** 复制*/
+    /** 复制 */
     BeanDefinition copy();
 
-    /** 最终返回bean的类型*/
+    /** 最终返回bean的类型 */
     Class<?> getFinallyClass();
 
-    /** 设置最终返回bean的类型*/
+    /** 设置最终返回bean的类型 */
     void setFinallyClass(Class<?> finallyClass);
+
+    /** 设置是否优先匹配 */
+    void setPrimary(boolean primary);
+
+    /** 是否优先匹配 */
+    boolean isPrimary();
+
+    /** 设置依赖bean的名称 */
+    String[] getDependsOn();
+
+    /** 返回依赖bean的名称 */
+    void setDependsOn(String[] depends);
+
+    /** 获取优先级*/
+    int getPriority();
+
+    /** 设置优先级 */
+    void setPriority(int priority);
 
 
     default boolean validate(){

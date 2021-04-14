@@ -29,4 +29,6 @@ public interface BeanDefinitionRegistry {
     //获取所有bean定义的注册名
     String[] getBeanDefinitionNames();
 
+    Collection<BeanDefinition> getBeanDefinitions();
+
 }

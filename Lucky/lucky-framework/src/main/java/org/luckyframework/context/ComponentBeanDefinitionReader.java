@@ -64,7 +64,10 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
         beanDefinition.setPropertyValues(getPropertyValues());
         beanDefinition.setBeanScope(getScope());
         beanDefinition.setLazyInit(isLazyInit());
+        beanDefinition.setPrimary(componentClass.isAnnotationPresent(Primary.class));
+        beanDefinition.setDependsOn(getDependsOn());
         beanDefinition.setConstructorValues(getConstructorValues());
+        beanDefinition.setPriority(getPriority());
         return beanDefinition;
     }
 
@@ -208,6 +211,16 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
     protected BeanScope getScope(){
         Scope scope = componentClass.getAnnotation(Scope.class);
         return scope == null ? BeanScope.SINGLETON : scope.value();
+    }
+
+    protected String[] getDependsOn(){
+        DependsOn dependsOn = componentClass.getAnnotation(DependsOn.class);
+        return dependsOn == null ? new String[0] : dependsOn.value();
+    }
+
+    public int getPriority(){
+        Order order = componentClass.getAnnotation(Order.class);
+        return order == null ? Ordered.LOWEST_PRECEDENCE : order.value();
     }
 
     @SuppressWarnings("all")
