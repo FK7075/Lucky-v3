@@ -10,18 +10,25 @@ import com.lucky.utils.annotation.Nullable;
 public interface TransactionDefinition {
 
 
+    /** 如果父方法没有事务，子方法会新建事务，如果父方法有事务，则子方法沿用父方法的事务*/
     int PROPAGATION_REQUIRED = 0;
 
     int PROPAGATION_SUPPORTS = 1;
 
+    /** 子方法新建事务，如果父方法没有事务会抛出异常，*/
     int PROPAGATION_MANDATORY = 2;
 
     int PROPAGATION_REQUIRES_NEW = 3;
 
     int PROPAGATION_NOT_SUPPORTED = 4;
 
+    /** 子方法始终不会有事务，如果父方法有事务直接抛出异常，父方法没有事务则正常执行 */
     int PROPAGATION_NEVER = 5;
 
+    /** 子方法新建事务，如果父方法有事务则将子方法嵌套在父方法的事务之中
+     *  嵌套：即父方法的事务将会影响子方法事务
+     *  （子方法事务执行成功，父方法事务执行失败时，子方法的事务也会回滚）
+     */
     int PROPAGATION_NESTED = 6;
 
     int ISOLATION_DEFAULT = -1;
