@@ -3,7 +3,6 @@ package org.jacklamb.lucky.aop.aspectj.pointcut;
 import org.aspectj.weaver.tools.PointcutExpression;
 import org.aspectj.weaver.tools.PointcutParser;
 import org.aspectj.weaver.tools.ShadowMatch;
-import org.luckyframework.aop.pointcut.Pointcut;
 
 import java.lang.reflect.Method;
 

@@ -1,6 +1,7 @@
 package org.luckyframework.aop.proxy;
 
 import com.lucky.utils.reflect.MethodUtils;
+import net.sf.cglib.proxy.MethodProxy;
 import org.aspectj.lang.JoinPoint;
 import org.luckyframework.aop.MethodInterceptorJoinPoint;
 import org.luckyframework.aop.advice.*;
@@ -20,15 +21,21 @@ public class AopAdviceChainInvocation {
     private final Object proxy;
     private Object[] args;
     private final Method method;
+    private MethodProxy methodProxy;
     private final List<Advice> advices;
     private int index = 0;
 
     public AopAdviceChainInvocation(Object proxy,Object target, Method method, Object[] args, List<Advice> advices) {
+        this(proxy,target,method,null,args,advices);
+    }
+
+    public AopAdviceChainInvocation(Object proxy,Object target, Method method,MethodProxy methodProxy, Object[] args, List<Advice> advices) {
         this.proxy = proxy;
         this.target = target;
         this.method = method;
         this.advices = advices;
         this.args = args;
+        this.methodProxy = methodProxy;
         this.joinPoint = new MethodInterceptorJoinPoint(this);
     }
 
@@ -92,7 +99,10 @@ public class AopAdviceChainInvocation {
             }
             return this.invoke();
         }else{
-            return MethodUtils.invoke(target,method,args);
+            if(methodProxy == null){
+                return MethodUtils.invoke(target,method,args);
+            }
+            return methodProxy.invokeSuper(proxy,args);
         }
     }
 }
