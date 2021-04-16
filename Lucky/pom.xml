@@ -13,7 +13,9 @@
     <module>lucky-bean</module>
     <module>lucky-framework</module>
     <module>lucky-data</module>
-      <module>lucky-aop</module>
+    <module>lucky-aop</module>
+    <module>lucky-tx</module>
+    <module>lucky-datasource</module>
   </modules>
 
   <name>lucky</name>
