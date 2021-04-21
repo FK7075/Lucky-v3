@@ -26,12 +26,23 @@
       <artifactId>lucky-framework</artifactId>
       <version>1.0-SNAPSHOT</version>
     </dependency>
+
+    <!-- HikariCP数据库连接池 -->
     <dependency>
-      <groupId>org.jacklamb.lucky</groupId>
-      <artifactId>lucky-bean</artifactId>
-      <version>1.0-SNAPSHOT</version>
-      <scope>compile</scope>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>3.4.2</version>
+      <scope>provided</scope>
     </dependency>
+
+    <!-- C3P0数据库连接池 -->
+    <dependency>
+      <groupId>com.mchange</groupId>
+      <artifactId>c3p0</artifactId>
+      <version>0.9.5.5</version>
+      <scope>provided</scope>
+    </dependency>
+
   </dependencies>
 
   <build>

@@ -368,7 +368,7 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
             }
             if(fromImportBeanDefinitionRegistrar){
                 ImportBeanDefinitionRegistrar importBeanDefinitionRegistrar = (ImportBeanDefinitionRegistrar) ClassUtils.newObject(importClass);
-                applicationContext.setAware(importBeanDefinitionRegistrar);
+                applicationContext.invokeAwareMethod(importBeanDefinitionRegistrar);
                 importBeanDefinitionRegistrar.registerBeanDefinitions(AnnotationMetadata.introspect(componentClass),registry);
             }
             if(!fromImportSelector && !fromImportBeanDefinitionRegistrar){
@@ -382,7 +382,7 @@ public class ComponentBeanDefinitionReader implements BeanDefinitionReader, Envi
         List<BeanDefinitionPojo> beanDefinitions = new ArrayList<>();
         if(ImportSelector.class.isAssignableFrom(importSelectorClass)){
             ImportSelector importSelector = ClassUtils.newObject(importSelectorClass);
-            applicationContext.setAware(importSelector);
+            applicationContext.invokeAwareMethod(importSelector);
             String[] imports = importSelector.selectImports(AnnotationMetadata.introspect(componentClass));
             Predicate<String> exclusionFilter = importSelector.getExclusionFilter();
             for (String importClassStr : imports) {

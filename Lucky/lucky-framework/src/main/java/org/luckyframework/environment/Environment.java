@@ -1,11 +1,5 @@
 package org.luckyframework.environment;
 
-import com.lucky.utils.fileload.Resource;
-import com.lucky.utils.fileload.resourceimpl.PathMatchingResourcePatternResolver;
-import org.luckyframework.context.annotation.PropertySource;
-
-import java.io.IOException;
-
 /**
  * 环境变量存储器
  * @author fk
@@ -23,6 +17,8 @@ public interface Environment {
     Object getExternalConfigFileProperty(String key);
 
     Object parsing(Object expression);
+
+    boolean contains(String key);
 
     default Object getProperty(String key){
         Object property = getExternalConfigFileProperty(key);

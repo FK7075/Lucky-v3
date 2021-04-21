@@ -38,6 +38,11 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         return singletonObjects.keySet().toArray(EMPTY_STRING_ARRAY);
     }
 
+    protected Object getSingletonObject(String beanName){
+        return singletonObjects.get(beanName);
+    }
+
+
     //获取bean的实例
     protected Object doGetBean(String name) {
         String[] dependsOn = getBeanDefinition(name).getDependsOn();
@@ -77,7 +82,7 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         // 设置属性
         populateBean(name,instance);
         // 设置Aware
-        setAware(instance);
+        invokeAwareMethod(instance);
         instance=applyPostProcessBeforeInitialization(name,instance);
         doInit(name,instance);
         instance=applyPostProcessAfterInitialization(name,instance);
@@ -94,7 +99,7 @@ public abstract class StandardBeanFactory extends DefaultBeanDefinitionRegistry 
         if(instance instanceof FactoryBean){
             try {
                 FactoryBean<?> factoryBean = (FactoryBean<?>) instance;
-                setAware(factoryBean);
+                invokeAwareMethod(factoryBean);
                 Object factoryCreateBean = factoryBean.getObject();
                 if(!factoryBean.isSingleton()){
                     definition.setScope(BeanScope.PROTOTYPE);

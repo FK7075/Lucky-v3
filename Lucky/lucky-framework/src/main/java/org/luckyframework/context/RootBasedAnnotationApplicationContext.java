@@ -108,7 +108,7 @@ public class RootBasedAnnotationApplicationContext extends DefaultListableBeanFa
     }
 
     @Override
-    public void setAware(Object instance) {
+    public void invokeAwareMethod(Object instance) {
         if(instance instanceof Aware){
             if(instance instanceof EnvironmentAware){
                 ((EnvironmentAware)instance).setEnvironment(this.environment);

@@ -35,11 +35,16 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
     // 所有单例bean的名称
     private List<String> singletonBeanNames;
 
+    private List<String> initialCreationBeanNames;
+
+    public DefaultListableBeanFactory() {
+    }
+
     /**
      * 实例化所有的单例bean
      */
     public void singletonBeanInitialization() {
-        for (String singletonBeanName : getSingletonBeanNames()) {
+        for (String singletonBeanName : getInitialCreationBeanNames()) {
             doGetBean(singletonBeanName);
         }
     }
@@ -50,20 +55,33 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
         singletonBeanNames.remove(name);
     }
 
+    public List<String> getInitialCreationBeanNames(){
+        if(initialCreationBeanNames == null){
+            List<SupportSortObject<String>>  sortNames = new ArrayList<>(225);
+            for (String definitionName : getBeanDefinitionNames()) {
+                BeanDefinition definition = getBeanDefinition(definitionName);
+                if(definition.isSingleton() && !definition.isLazyInit()){
+                    sortNames.add(new SupportSortObject<>(definition.getPriority(),definitionName));
+                }
+            }
+            initialCreationBeanNames=sortNames.stream().sorted(Comparator.comparingInt(SupportSortObject::getPriority)).map(SupportSortObject::getObject).collect(Collectors.toList());
+        }
+        return initialCreationBeanNames;
+    }
+
     /**
      * 获取所有单例bean的名称
      * @return 所有单例bean的名称
      */
     public String[] getSingletonBeanNames(){
         if(singletonBeanNames == null){
-            List<SupportSortObject<String>>  sortNames = new ArrayList<>(225);
+            singletonBeanNames = new ArrayList<>(225);
             for (String definitionName : getBeanDefinitionNames()) {
                 BeanDefinition definition = getBeanDefinition(definitionName);
                 if(definition.isSingleton() ){
-                    sortNames.add(new SupportSortObject<>(definition.getPriority(),definitionName));
+                    singletonBeanNames.add(definitionName);
                 }
             }
-            singletonBeanNames=sortNames.stream().sorted(Comparator.comparingInt(SupportSortObject::getPriority)).map(SupportSortObject::getObject).collect(Collectors.toList());
         }
         return singletonBeanNames.toArray(EMPTY_STRING_ARRAY);
     }
@@ -166,7 +184,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
     }
 
     @Override
-    public void setAware(Object instance) {
+    public void invokeAwareMethod(Object instance) {
         if(instance instanceof Aware){
             if(instance instanceof BeanFactoryAware){
                 ((BeanFactoryAware)instance).setBeanFactory(this);
@@ -181,7 +199,7 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
     @Override
     public void close() throws IOException {
         for (String singletonBeanName : getSingletonBeanNames()) {
-            Object bean = getBean(singletonBeanName);
+            Object bean = getSingletonObject(singletonBeanName);
             if(bean instanceof DisposableBean){
                 try {
                     ((DisposableBean)bean).destroy();

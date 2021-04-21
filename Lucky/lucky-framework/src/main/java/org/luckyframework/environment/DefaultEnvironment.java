@@ -108,6 +108,16 @@ public class DefaultEnvironment implements Environment {
     }
 
     @Override
+    public boolean contains(String key) {
+        try {
+            Object property = getProperty(key);
+            return !JexlEngineUtil.isExpression(property.toString());
+        }catch (Exception e){
+            return false;
+        }
+    }
+
+    @Override
     public Object getProperty(String key) {
         return getProperties(key);
     }
