@@ -47,5 +47,6 @@
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.7.25" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.mchange:c3p0:0.9.5.5" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.mchange:mchange-commons-java:0.2.19" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: com.alibaba:druid:1.1.20" level="project" />
   </component>
 </module>

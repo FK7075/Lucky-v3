@@ -29,7 +29,7 @@ public class LuckyDataSourceManager implements DataSourceManager, ApplicationCon
     private ApplicationContext applicationContext;
 
     static {
-        setDefaultDataSourceBuilder(new HikariCPDataSourceBuilder());
+        setDefaultDataSourceBuilder(new HikariDataSourceBuilder());
     }
 
     public static Map<String,DataSource> getAllDataSources() throws Exception {
@@ -40,6 +40,10 @@ public class LuckyDataSourceManager implements DataSourceManager, ApplicationCon
             }
         }
         return dataSourceMap;
+    }
+
+    public static DataSource getDefaultDataSource() throws Exception {
+        return getSDataSource(DEFAULT_DBNAME);
     }
 
     public static DataSource getSDataSource(String dbname) throws Exception {

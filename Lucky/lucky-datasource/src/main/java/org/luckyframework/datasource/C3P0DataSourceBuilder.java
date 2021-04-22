@@ -26,6 +26,8 @@ public class C3P0DataSourceBuilder extends AbstractDataSourceBuilder{
     @Override
     public DataSource createDataSource() throws Exception {
         ComboPooledDataSource dataSource =new ComboPooledDataSource(true);
+        String poolName = getConfValue(POOL_NAME, String.class);
+        if(poolName != null)  dataSource.setDataSourceName(poolName);
         dataSource.setJdbcUrl(getConfValue(JDBC_URL,String.class));
         dataSource.setDriverClass(getConfValue(DRIVER_CLASS_NAME,String.class));
         dataSource.setUser(getConfValue(USER_NAME,String.class));

@@ -200,6 +200,9 @@ public class DefaultListableBeanFactory extends StandardBeanFactory {
     public void close() throws IOException {
         for (String singletonBeanName : getSingletonBeanNames()) {
             Object bean = getSingletonObject(singletonBeanName);
+            if(bean == null){
+                continue;
+            }
             if(bean instanceof DisposableBean){
                 try {
                     ((DisposableBean)bean).destroy();

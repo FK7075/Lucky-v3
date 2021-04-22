@@ -13,7 +13,7 @@ import java.util.concurrent.ThreadFactory;
  * @version 1.0
  * @date 2021/4/21 0021 11:27
  */
-public class HikariCPDataSourceBuilder extends AbstractDataSourceBuilder {
+public class HikariDataSourceBuilder extends AbstractDataSourceBuilder {
 
     private final static String DATA_SOURCE_CLASS_NAME      = "data-source-class-name";
     private final static String AUTO_COMMIT                 = "auto-commit";
@@ -23,7 +23,6 @@ public class HikariCPDataSourceBuilder extends AbstractDataSourceBuilder {
     private final static String CONNECTION_TEST_QUERY       = "connection-test-query";
     private final static String MINIMUM_IDLE                = "minimum-idle";
     private final static String MAXIMUM_POOL_SIZE           = "maximum-pool-size";
-    private final static String POOL_NAME                   = "pool-name";
     private final static String METRIC_REGISTRY             = "metric-registry";
     private final static String HEALTH_CHECK_REGISTRY       = "health-check-registry";
     private final static String INITIALIZATION_FAIL_TIMEOUT = "initialization-fail-timeout";

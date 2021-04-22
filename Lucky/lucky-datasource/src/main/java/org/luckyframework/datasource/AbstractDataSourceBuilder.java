@@ -6,6 +6,9 @@ import com.lucky.utils.reflect.ClassUtils;
 import org.luckyframework.environment.Environment;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * @author fk
@@ -37,11 +40,29 @@ public abstract class AbstractDataSourceBuilder implements DataSourceBuilder{
         if(!ENVIRONMENT.contains(realKey)){
             return null;
         }
-        String strValue = ENVIRONMENT.getProperty(realKey).toString();
+        Object confValue = ENVIRONMENT.getProperty(realKey);
         if(ClassUtils.isSimple(aClass) || ClassUtils.isPrimitive(aClass)){
-            return (T) JavaConversion.strToBasic(strValue,aClass);
+            return (T) JavaConversion.strToBasic(confValue.toString(),aClass);
         }
-        return (T)ClassUtils.newObject(strValue);
+        return (T)ClassUtils.newObject(confValue.toString());
+    }
+
+    @SuppressWarnings("unchecked")
+    protected List<String> getConfCollectionValue(String key){
+        String realKey = PREFIX+"."+key;
+        if(!ENVIRONMENT.contains(realKey)){
+            return null;
+        }
+        Object confValue = ENVIRONMENT.getProperty(realKey);
+        if((confValue instanceof Collection)){
+            throw new RuntimeException("The value corresponding to the '"+realKey+"' configuration is not a collection type");
+        }
+        List<Object> list = (List<Object>) confValue;
+        List<String> result = new ArrayList<>(list.size());
+        for (int i = 0; i < list.size(); i++) {
+            result.add(ENVIRONMENT.getProperty(realKey+".get("+i+")").toString());
+        }
+        return result;
     }
 
     public abstract DataSource createDataSource() throws Exception;
